@@ -1,0 +1,29 @@
+# Node modules
+frontend/node_modules/
+node_modules/
+
+# Build outputs
+bin/
+web/dist/
+frontend/dist/
+
+# Data
+data/
+*.db
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Docs
+*.md
+!README.md
+
+# Misc
+.env*
+.claude/

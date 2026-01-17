@@ -1,0 +1,12 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -o ./tmp/nomadbank.exe ./cmd/nomadbank"
+bin = "./tmp/nomadbank.exe"
+args_bin = ["-mode", "dev"]
+include_ext = ["go"]
+exclude_dir = ["tmp", "frontend", "web", "node_modules"]
+
+[misc]
+clean_on_exit = true
