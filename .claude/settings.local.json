@@ -55,7 +55,9 @@
       "Bash(Write-Host \"Task 4 完成：删除模板 Dashboard 组件目录\")",
       "Bash(Remove-Item -Path \"D:\\\\Projects\\\\bank\\\\service\" -Recurse -Force -ErrorAction SilentlyContinue)",
       "Bash(Write-Host \"Task 5 完成：删除空的 service 目录\")",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Skill(superpowers:brainstorming)",
+      "Bash(python3:*)"
     ]
   }
 }

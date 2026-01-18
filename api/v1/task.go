@@ -81,11 +81,8 @@ func (a *TaskAPI) Generate(c echo.Context) error {
 	}
 
 	// 获取当前分组的已有任务的最大周期和最后执行日期
-	bankIDs := make([]string, len(banks))
-	for i, b := range banks {
-		bankIDs[i] = b.ID
-	}
-	lastCycle, lastDate := a.store.GetLastTaskCycleAndDate(userID, bankIDs)
+	// req.Group 为空字符串表示"全部银行"
+	lastCycle, lastDate := a.store.GetLastTaskCycleAndDate(userID, req.Group)
 
 	// 确定起始周期和起始日期
 	startCycle := lastCycle + 1
@@ -100,7 +97,7 @@ func (a *TaskAPI) Generate(c echo.Context) error {
 	}
 
 	// 生成新任务（不删除旧任务）
-	tasks := generateTasks(userID, banks, strategy, req.Cycles, startCycle, startDate)
+	tasks := generateTasks(userID, req.Group, banks, strategy, req.Cycles, startCycle, startDate)
 
 	if err := a.store.CreateTasks(tasks); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "创建任务失败")
@@ -159,7 +156,8 @@ type transferPair struct {
 }
 
 // generateTasks 生成转账任务
-func generateTasks(userID string, banks []model.Bank, strategy *model.Strategy, cycles int, startCycle int, startDate time.Time) []model.TransferTask {
+// groupName 为空字符串表示"全部银行"
+func generateTasks(userID string, groupName string, banks []model.Bank, strategy *model.Strategy, cycles int, startCycle int, startDate time.Time) []model.TransferTask {
 	var allTasks []model.TransferTask
 	currentDate := startDate
 
@@ -176,7 +174,7 @@ func generateTasks(userID string, banks []model.Bank, strategy *model.Strategy, 
 		pairs := generateBalancedPairs(banks)
 
 		// 安排任务日期（集中化 + 遵守规则）
-		cycleTasks := scheduleTasks(userID, cycle, pairs, currentDate, strategy)
+		cycleTasks := scheduleTasks(userID, groupName, cycle, pairs, currentDate, strategy)
 		allTasks = append(allTasks, cycleTasks...)
 
 		// 更新 currentDate 为本周期最后一个任务的日期
@@ -242,7 +240,8 @@ func generateBalancedPairs(banks []model.Bank) []transferPair {
 }
 
 // scheduleTasks 安排任务日期
-func scheduleTasks(userID string, cycle int, pairs []transferPair, baseDate time.Time, strategy *model.Strategy) []model.TransferTask {
+// groupName 为空字符串表示"全部银行"
+func scheduleTasks(userID string, groupName string, cycle int, pairs []transferPair, baseDate time.Time, strategy *model.Strategy) []model.TransferTask {
 	var tasks []model.TransferTask
 
 	// 记录每个银行在每天的转账方向
@@ -317,6 +316,7 @@ func scheduleTasks(userID string, cycle int, pairs []transferPair, baseDate time
 		task := model.TransferTask{
 			ID:         uuid.New().String(),
 			UserID:     userID,
+			GroupName:  groupName,
 			Cycle:      cycle,
 			AnchorDate: baseDate,
 			ExecDate:   execTime,

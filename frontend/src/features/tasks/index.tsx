@@ -3,18 +3,17 @@
  */
 import { useEffect, useState } from 'react'
 import {
-  Calendar,
   CheckCircle2,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
   Download,
-  FileText,
-  List,
+  Filter,
   Loader2,
+  MoreHorizontal,
+  Plus,
   Search as SearchIcon,
-  Sparkles,
+  SkipForward,
   Trash2,
   XCircle,
 } from 'lucide-react'
@@ -41,9 +40,16 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -62,7 +68,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
-import { CalendarView } from '@/components/calendar-view'
 import { Main } from '@/components/layout/main'
 import {
   useBankGroups,
@@ -91,9 +96,8 @@ export function Tasks() {
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set())
   const [deleting, setDeleting] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list')
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
+  const [pageSize, setPageSize] = useState(10)
   // 完成任务对话框
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false)
   const [completingTask, setCompletingTask] = useState<Task | null>(null)
@@ -488,102 +492,133 @@ export function Tasks() {
     <>
       <Main>
         <div className='space-y-6'>
-          <div className='flex items-center justify-between'>
-            <h1 className='text-2xl font-bold'>任务列表</h1>
-            <div className='flex gap-2'>
-              {/* 视图切换 */}
-              <div className='flex rounded-md border'>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size='sm'
-                  className='rounded-r-none'
-                  onClick={() => setViewMode('list')}
-                >
-                  <List className='h-4 w-4' />
-                </Button>
-                <Button
-                  variant={viewMode === 'calendar' ? 'default' : 'ghost'}
-                  size='sm'
-                  className='rounded-l-none'
-                  onClick={() => setViewMode('calendar')}
-                >
-                  <Calendar className='h-4 w-4' />
-                </Button>
+          {/* 顶部工具栏 */}
+          <div className='flex flex-col gap-4'>
+            {/* 第一行：标题 + 主要操作 */}
+            <div className='flex items-center justify-between'>
+              <div className='space-y-1'>
+                <h1 className='text-2xl font-bold tracking-tight'>任务列表</h1>
+                <p className='text-muted-foreground text-sm'>
+                  共 {filteredTasks.length} 个任务
+                  {selectedTasks.size > 0 && (
+                    <span className='text-primary ml-2 font-medium'>
+                      · 已选 {selectedTasks.size} 个
+                    </span>
+                  )}
+                </p>
               </div>
-
-              <div className='relative'>
-                <SearchIcon className='text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4' />
-                <Input
-                  placeholder='搜索银行、备注、金额...'
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className='w-48 pl-8'
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className='w-32'>
-                  <SelectValue placeholder='筛选状态' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='all'>全部</SelectItem>
-                  <SelectItem value='pending'>待执行</SelectItem>
-                  <SelectItem value='completed'>已完成</SelectItem>
-                  <SelectItem value='skipped'>已跳过</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* 批量删除下拉菜单 */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant='outline' disabled={deleting}>
-                    {deleting ? (
-                      <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                    ) : (
-                      <Trash2 className='mr-2 h-4 w-4' />
-                    )}
-                    批量删除
-                    <ChevronDown className='ml-2 h-4 w-4' />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align='end'>
-                  <DropdownMenuItem
-                    onClick={() => handleBatchDelete('selected')}
-                    disabled={selectedTasks.size === 0}
-                  >
-                    删除选中 ({selectedTasks.size})
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleBatchDelete('completed')}
-                  >
-                    删除已完成
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {cycles.map((cycle) => (
-                    <DropdownMenuItem
-                      key={cycle}
-                      onClick={() => handleBatchDelete(cycle)}
-                    >
-                      删除周期 {cycle}
-                    </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => handleBatchDelete('all')}
-                    className='text-destructive'
-                  >
-                    删除全部
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <Button variant='outline' onClick={handleExport}>
-                <Download className='mr-2 h-4 w-4' />
-                导出
-              </Button>
-              <Button onClick={handleOpenGenerateDialog}>
-                <Sparkles className='mr-2 h-4 w-4' />
+              <Button onClick={handleOpenGenerateDialog} className='gap-2'>
+                <Plus className='h-4 w-4' />
                 生成任务
               </Button>
+            </div>
+
+            {/* 第二行：筛选 + 次要操作 */}
+            <div className='flex items-center justify-between gap-4'>
+              {/* 左侧：筛选控件 */}
+              <div className='flex items-center gap-2'>
+                <div className='relative'>
+                  <SearchIcon className='text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2' />
+                  <Input
+                    placeholder='搜索...'
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className='w-[200px] pl-9'
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className='w-[120px]'>
+                    <Filter className='mr-2 h-4 w-4' />
+                    <SelectValue placeholder='状态' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='all'>全部</SelectItem>
+                    <SelectItem value='pending'>待执行</SelectItem>
+                    <SelectItem value='completed'>已完成</SelectItem>
+                    <SelectItem value='skipped'>已跳过</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 右侧：次要操作 */}
+              <TooltipProvider delayDuration={0}>
+                <div className='flex items-center gap-1'>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        onClick={handleExport}
+                        className='h-9 w-9'
+                      >
+                        <Download className='h-4 w-4' />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>导出 CSV</TooltipContent>
+                  </Tooltip>
+
+                  {/* 批量删除菜单 */}
+                  <DropdownMenu>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            disabled={deleting}
+                            className='h-9 w-9'
+                          >
+                            {deleting ? (
+                              <Loader2 className='h-4 w-4 animate-spin' />
+                            ) : (
+                              <Trash2 className='h-4 w-4' />
+                            )}
+                          </Button>
+                        </DropdownMenuTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>批量删除</TooltipContent>
+                    </Tooltip>
+                    <DropdownMenuContent align='end' className='w-48'>
+                      <DropdownMenuLabel>删除任务</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => handleBatchDelete('selected')}
+                        disabled={selectedTasks.size === 0}
+                      >
+                        删除选中 ({selectedTasks.size})
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleBatchDelete('completed')}
+                      >
+                        删除已完成
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      {cycles.length > 0 && (
+                        <>
+                          <DropdownMenuLabel className='text-xs'>
+                            按周期删除
+                          </DropdownMenuLabel>
+                          {cycles.map((cycle) => (
+                            <DropdownMenuItem
+                              key={cycle}
+                              onClick={() => handleBatchDelete(cycle)}
+                            >
+                              周期 {cycle}
+                            </DropdownMenuItem>
+                          ))}
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
+                      <DropdownMenuItem
+                        onClick={() => handleBatchDelete('all')}
+                        className='text-destructive focus:text-destructive'
+                      >
+                        删除全部
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </TooltipProvider>
             </div>
           </div>
 
@@ -750,53 +785,20 @@ export function Tasks() {
                 </p>
               </CardContent>
             </Card>
-          ) : viewMode === 'calendar' ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>任务日历</CardTitle>
-                <CardDescription>
-                  共 {filteredTasks.length} 个任务
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <CalendarView
-                  tasks={sortedTasks.map((task) => {
-                    const execDate = new Date(task.exec_date)
-                    return {
-                      id: task.id,
-                      exec_date: execDate.toLocaleDateString('sv-SE'), // YYYY-MM-DD 格式
-                      exec_time: execDate.toLocaleTimeString('zh-CN', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      }),
-                      from_bank_name: getBankName(task.from_bank_id),
-                      to_bank_name: getBankName(task.to_bank_id),
-                      amount: task.amount,
-                      status: task.status,
-                    }
-                  })}
-                  onComplete={(id) => {
-                    const task = tasks.find((t) => t.id === id)
-                    if (task) handleQuickComplete(task)
-                  }}
-                  onSkip={(id) => {
-                    const task = tasks.find((t) => t.id === id)
-                    if (task) handleSkip(task)
-                  }}
-                />
-              </CardContent>
-            </Card>
           ) : (
             <Card>
               <CardHeader>
-                <CardTitle>任务历史</CardTitle>
-                <CardDescription>
-                  共 {filteredTasks.length} 个任务
-                  {statusFilter !== 'all' &&
-                    ` (筛选: ${statusFilter === 'pending' ? '待执行' : statusFilter === 'completed' ? '已完成' : '已跳过'})`}
-                  {selectedTasks.size > 0 &&
-                    ` · 已选择 ${selectedTasks.size} 个`}
-                </CardDescription>
+                <CardTitle className='text-base'>任务历史</CardTitle>
+                {statusFilter !== 'all' && (
+                  <CardDescription>
+                    筛选:{' '}
+                    {statusFilter === 'pending'
+                      ? '待执行'
+                      : statusFilter === 'completed'
+                        ? '已完成'
+                        : '已跳过'}
+                  </CardDescription>
+                )}
               </CardHeader>
               <CardContent>
                 <div className='overflow-x-auto'>
@@ -817,7 +819,7 @@ export function Tasks() {
                         <TableHead>收款银行</TableHead>
                         <TableHead>备注</TableHead>
                         <TableHead>状态</TableHead>
-                        <TableHead className='w-24'>操作</TableHead>
+                        <TableHead className='w-20 text-right'>操作</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -860,48 +862,66 @@ export function Tasks() {
                             </div>
                           </TableCell>
                           <TableCell>{getStatusBadge(task.status)}</TableCell>
-                          <TableCell>
-                            <div className='flex gap-1'>
-                              {task.status === 'pending' && (
-                                <>
-                                  <Button
-                                    variant='ghost'
-                                    size='icon'
-                                    className='h-8 w-8 text-green-600'
-                                    onClick={() => handleQuickComplete(task)}
-                                    title='快速完成'
-                                  >
-                                    <CheckCircle2 className='h-4 w-4' />
-                                  </Button>
-                                  <Button
-                                    variant='ghost'
-                                    size='icon'
-                                    className='h-8 w-8 text-blue-600'
-                                    onClick={() => openCompleteDialog(task)}
-                                    title='完成并添加备注'
-                                  >
-                                    <FileText className='h-4 w-4' />
-                                  </Button>
-                                  <Button
-                                    variant='ghost'
-                                    size='icon'
-                                    className='text-muted-foreground h-8 w-8'
-                                    onClick={() => handleSkip(task)}
-                                    title='跳过'
-                                  >
-                                    <XCircle className='h-4 w-4' />
-                                  </Button>
-                                </>
+                          <TableCell className='text-right'>
+                            <div className='inline-flex items-center gap-0'>
+                              {task.status === 'pending' ? (
+                                <TooltipProvider delayDuration={0}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant='ghost'
+                                        size='icon'
+                                        className='h-8 w-8 text-green-600 hover:bg-green-50 hover:text-green-700 dark:hover:bg-green-950'
+                                        onClick={() => handleQuickComplete(task)}
+                                      >
+                                        <CheckCircle2 className='h-4 w-4' />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side='top'>
+                                      完成
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              ) : (
+                                <div className='h-8 w-8' />
                               )}
-                              <Button
-                                variant='ghost'
-                                size='icon'
-                                className='text-destructive h-8 w-8'
-                                onClick={() => handleDelete(task)}
-                                title='删除'
-                              >
-                                <Trash2 className='h-4 w-4' />
-                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant='ghost'
+                                    size='icon'
+                                    className='h-8 w-8'
+                                  >
+                                    <MoreHorizontal className='h-4 w-4' />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align='end'>
+                                  {task.status === 'pending' && (
+                                    <>
+                                      <DropdownMenuItem
+                                        onClick={() => openCompleteDialog(task)}
+                                      >
+                                        <CheckCircle2 className='mr-2 h-4 w-4' />
+                                        完成并添加备注
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => handleSkip(task)}
+                                      >
+                                        <SkipForward className='mr-2 h-4 w-4' />
+                                        跳过任务
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                    </>
+                                  )}
+                                  <DropdownMenuItem
+                                    onClick={() => handleDelete(task)}
+                                    className='text-destructive focus:text-destructive'
+                                  >
+                                    <Trash2 className='mr-2 h-4 w-4' />
+                                    删除
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </TableCell>
                         </TableRow>

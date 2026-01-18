@@ -311,20 +311,20 @@ func (s *Store) DeleteTasksByUserID(userID string) error {
 	return s.db.Delete(&model.TransferTask{}, "user_id = ?", userID).Error
 }
 
-// GetLastTaskCycleAndDate 获取指定银行列表的最大周期和最后执行日期
-func (s *Store) GetLastTaskCycleAndDate(userID string, bankIDs []string) (int, time.Time) {
-	var result struct {
-		MaxCycle int
-		MaxDate  time.Time
+// GetLastTaskCycleAndDate 获取指定分组的最大周期和该周期的最后执行日期
+// groupName 为空字符串表示"全部银行"
+func (s *Store) GetLastTaskCycleAndDate(userID string, groupName string) (int, time.Time) {
+	// 直接获取该分组最后一条任务（按周期降序、日期降序）
+	var task model.TransferTask
+	err := s.db.Where("user_id = ? AND group_name = ?", userID, groupName).
+		Order("cycle DESC, exec_date DESC").
+		First(&task).Error
+
+	if err != nil {
+		return 0, time.Time{}
 	}
 
-	// 查询涉及这些银行的任务中的最大周期和最后日期
-	s.db.Model(&model.TransferTask{}).
-		Select("MAX(cycle) as max_cycle, MAX(exec_date) as max_date").
-		Where("user_id = ? AND (from_bank_id IN ? OR to_bank_id IN ?)", userID, bankIDs, bankIDs).
-		Scan(&result)
-
-	return result.MaxCycle, result.MaxDate
+	return task.Cycle, task.ExecDate
 }
 
 // ========== Notification 操作 ==========
