@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
-  Download,
   Filter,
   Loader2,
   MoreHorizontal,
@@ -77,13 +76,11 @@ import {
   useTaskCycles,
   useTasks,
 } from '@/hooks/use-queries'
-import { importExportApi, tasksApi } from '@/lib/api'
+import { tasksApi } from '@/lib/api'
 import type { CompleteTaskRequest, Task } from '@/lib/types'
-import { useAuthStore } from '@/stores/auth-store'
 
 export function Tasks() {
   const { refreshTasks } = useRefreshQueries()
-  const { accessToken } = useAuthStore((state) => state.auth)
 
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false)
@@ -283,45 +280,6 @@ export function Tasks() {
       console.error(error)
     } finally {
       setGenerating(false)
-    }
-  }
-
-  // 导出任务
-  const handleExport = async () => {
-    try {
-      if (!accessToken) {
-        toast.error('请先登录')
-        return
-      }
-
-      const url = importExportApi.exportTasksUrl(
-        statusFilter !== 'all' ? statusFilter : undefined
-      )
-
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error('导出失败')
-      }
-
-      const blob = await response.blob()
-      const downloadUrl = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = downloadUrl
-      link.download = `tasks_${new Date().toISOString().slice(0, 10)}.csv`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(downloadUrl)
-
-      toast.success('导出成功')
-    } catch (error) {
-      toast.error('导出失败')
-      console.error(error)
     }
   }
 
@@ -543,20 +501,6 @@ export function Tasks() {
               {/* 右侧：次要操作 */}
               <TooltipProvider delayDuration={0}>
                 <div className='flex items-center gap-1'>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        onClick={handleExport}
-                        className='h-9 w-9'
-                      >
-                        <Download className='h-4 w-4' />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>导出 CSV</TooltipContent>
-                  </Tooltip>
-
                   {/* 批量删除菜单 */}
                   <DropdownMenu>
                     <Tooltip>

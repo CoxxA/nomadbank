@@ -461,12 +461,10 @@ export const tagsApi = {
 
 /** 导入导出 API */
 export const importExportApi = {
-  exportBanksUrl: () => `${API_BASE_URL}/api/v1/banks/export`,
   importBanks: async (_file: File): Promise<ImportResult> => {
     // Go 后端暂不支持
     return { success_count: 0, error_count: 0, errors: ['导入功能暂不支持'] }
   },
-  exportTasksUrl: (_status?: string) => `${API_BASE_URL}/api/v1/tasks/export`,
 }
 
 /** Webhook API */
