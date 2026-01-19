@@ -7,7 +7,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Download,
   Loader2,
   MoreHorizontal,
   Pencil,
@@ -73,12 +72,10 @@ import {
 import { queryKeys } from '@/hooks/use-queries'
 import { banksApi, importExportApi, tagsApi } from '@/lib/api'
 import type { BankWithNextTask, CreateBankRequest } from '@/lib/types'
-import { useAuthStore } from '@/stores/auth-store'
 
 export function Accounts() {
   const queryClient = useQueryClient()
   const { refreshBanks } = useRefreshQueries()
-  const { accessToken } = useAuthStore((state) => state.auth)
 
   // 使用 TanStack Query hooks 加载数据（自动缓存）
   const {
@@ -340,42 +337,6 @@ export function Accounts() {
     }
   }
 
-  // 导出银行列表
-  const handleExport = async () => {
-    try {
-      if (!accessToken) {
-        toast.error('请先登录')
-        return
-      }
-
-      const url = importExportApi.exportBanksUrl()
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error('导出失败')
-      }
-
-      const blob = await response.blob()
-      const downloadUrl = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = downloadUrl
-      link.download = `banks_${new Date().toISOString().slice(0, 10)}.csv`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(downloadUrl)
-
-      toast.success('导出成功')
-    } catch (error) {
-      toast.error('导出失败')
-      console.error(error)
-    }
-  }
-
   // 导入银行列表
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -552,10 +513,6 @@ export function Accounts() {
                   <Upload className='mr-2 h-4 w-4' />
                 )}
                 导入
-              </Button>
-              <Button variant='outline' size='sm' onClick={handleExport}>
-                <Download className='mr-2 h-4 w-4' />
-                导出
               </Button>
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
