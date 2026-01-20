@@ -130,11 +130,6 @@ PUT    /api/v1/notifications/:id   # 更新渠道
 DELETE /api/v1/notifications/:id   # 删除渠道
 POST   /api/v1/notifications/:id/test # 测试渠道
 
-# 标签
-GET    /api/v1/tags                # 标签列表
-POST   /api/v1/tags                # 创建标签
-DELETE /api/v1/tags/:id            # 删除标签
-
 # 统计
 GET    /api/v1/stats/dashboard     # 仪表盘统计
 ```

@@ -61,7 +61,6 @@ nomadbank/
 │   ├── task.go                   # 任务生成 API（421 行，核心业务逻辑）
 │   ├── strategy.go               # 策略管理 API（230 行）
 │   ├── notification.go           # 通知渠道 API（319 行）
-│   ├── tag.go                    # 标签管理 API（103 行）
 │   └── stats.go                  # 统计数据 API（31 行）
 ├── server/                       # Echo HTTP 服务器
 │   ├── server.go                 # 服务器实例（60 行）
@@ -78,7 +77,6 @@ nomadbank/
 │       ├── strategy.go           # 保活策略模型（36 行）
 │       ├── task.go               # 转账任务模型（38 行）
 │       ├── notification.go       # 通知渠道模型（52 行）
-│       └── tag.go                # 标签模型（29 行）
 ├── internal/config/              # 配置管理
 │   └── config.go                 # 环境变量与配置加载
 ├── web/                          # 前端静态文件嵌入
@@ -213,13 +211,6 @@ DELETE /api/v1/notifications/:id   # 删除通知渠道
 POST   /api/v1/notifications/:id/test # 测试通知渠道
 ```
 
-### 标签管理
-```
-GET    /api/v1/tags                # 获取标签列表（含银行关联数）
-POST   /api/v1/tags                # 创建标签
-DELETE /api/v1/tags/:id            # 删除标签
-```
-
 ### 统计数据
 ```
 GET    /api/v1/stats/dashboard     # 获取仪表盘统计数据
@@ -282,17 +273,6 @@ GET    /api/v1/stats/dashboard     # 获取仪表盘统计数据
 - `config` (JSON 配置，包含 API Key、URL 等)
 - `is_enabled` (是否启用)
 - `created_at`, `updated_at`
-
-### tags - 标签
-- `id` (主键, UUID)
-- `user_id` (外键, 关联用户)
-- `name` (标签名称)
-- `color` (标签颜色)
-- `created_at`
-
-### bank_tags - 银行标签关联表（多对多）
-- `bank_id` (外键, 关联银行)
-- `tag_id` (外键, 关联标签)
 
 ---
 
@@ -433,7 +413,6 @@ make test      # 运行测试
 3. **银行账户管理**
    - 创建/编辑/删除银行
    - 银行分组管理
-   - 银行标签管理
    - 批量操作
    - 金额范围配置
 

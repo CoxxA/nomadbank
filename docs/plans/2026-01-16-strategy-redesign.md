@@ -123,7 +123,6 @@ POST /api/v1/tasks/generate
 {
   "strategy_id": "xxx",      // 选择的策略 ID
   "bank_ids": ["a","b","c"], // 选择的银行 ID 列表（空=全部活跃银行）
-  "tag_id": "xxx",           // 或按标签筛选银行（与 bank_ids 二选一）
   "cycles": 4                // 生成周期数
 }
 
@@ -150,7 +149,7 @@ POST /api/v1/tasks/generate
 
 生成任务时选择：
 - 策略（下拉选择）
-- 银行范围（全部/按标签/手动选择）
+- 银行范围（全部/手动选择）
 - 周期数
 
 ## 实现步骤
