@@ -221,10 +221,6 @@ export function useRefreshQueries() {
       queryClient.invalidateQueries({ queryKey: queryKeys.strategies })
     },
 
-    /** 刷新标签数据 */
-    refreshTags: () => {
-    },
-
     /** 刷新通知渠道数据 */
     refreshNotificationChannels: () => {
       queryClient.invalidateQueries({

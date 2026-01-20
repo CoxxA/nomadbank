@@ -2,7 +2,6 @@
  * 银行管理页面
  */
 import { useEffect, useRef, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
 import {
   ChevronDown,
   ChevronLeft,
@@ -12,10 +11,8 @@ import {
   Pencil,
   Plus,
   Search as SearchIcon,
-  Tag as TagIcon,
   Trash2,
   Upload,
-  X,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
@@ -67,14 +64,11 @@ import {
   useBankGroups,
   useBanksWithNextTasks,
   useRefreshQueries,
-  useTags,
 } from '@/hooks/use-queries'
-import { queryKeys } from '@/hooks/use-queries'
-import { banksApi, importExportApi, tagsApi } from '@/lib/api'
+import { banksApi, importExportApi } from '@/lib/api'
 import type { BankWithNextTask, CreateBankRequest } from '@/lib/types'
 
 export function Accounts() {
-  const queryClient = useQueryClient()
   const { refreshBanks } = useRefreshQueries()
 
   // 使用 TanStack Query hooks 加载数据（自动缓存）
@@ -84,8 +78,6 @@ export function Accounts() {
     refetch,
   } = useBanksWithNextTasks()
   const { data: groupsData } = useBankGroups()
-  const { data: allTags = [] } = useTags()
-
   // 页面切换时强制刷新数据
   useEffect(() => {
     refetch()
@@ -112,14 +104,6 @@ export function Accounts() {
   const [moveGroupDialogOpen, setMoveGroupDialogOpen] = useState(false)
   const [selectedMoveGroup, setSelectedMoveGroup] = useState<string>('')
   const [movingGroup, setMovingGroup] = useState(false)
-  // 标签相关
-  const [tagDialogOpen, setTagDialogOpen] = useState(false)
-  const [editingBankForTags, setEditingBankForTags] =
-    useState<BankWithNextTask | null>(null)
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
-  const [newTagName, setNewTagName] = useState('')
-  const [savingTags, setSavingTags] = useState(false)
-
   // 打开新增对话框
   const handleAdd = () => {
     setEditingBank(null)
@@ -228,66 +212,6 @@ export function Accounts() {
     }
   }
 
-  // 打开标签编辑对话框
-  const openTagDialog = (bank: BankWithNextTask) => {
-    setEditingBankForTags(bank)
-    setSelectedTagIds(bank.tags?.map((t) => t.id) || [])
-    setNewTagName('')
-    setTagDialogOpen(true)
-  }
-
-  // 创建新标签
-  const handleCreateTag = async () => {
-    if (!newTagName.trim()) return
-
-    try {
-      const tag = await tagsApi.create({
-        name: newTagName.trim(),
-        color: 'blue',
-      })
-      queryClient.setQueryData(queryKeys.tags, [...allTags, tag])
-      setSelectedTagIds([...selectedTagIds, tag.id])
-      setNewTagName('')
-      toast.success('标签创建成功')
-    } catch {
-      toast.error('创建标签失败')
-    }
-  }
-
-  // 保存银行标签
-  const handleSaveTags = async () => {
-    if (!editingBankForTags) return
-
-    setSavingTags(true)
-    try {
-      await tagsApi.updateBankTags(editingBankForTags.id, {
-        tag_ids: selectedTagIds,
-      })
-      toast.success('标签更新成功')
-      setTagDialogOpen(false)
-      refreshBanks()
-    } catch {
-      toast.error('更新标签失败')
-    } finally {
-      setSavingTags(false)
-    }
-  }
-
-  // 标签颜色映射
-  const tagColors: Record<string, string> = {
-    gray: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
-    red: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-    orange:
-      'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-    yellow:
-      'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-    green: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-    blue: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-    purple:
-      'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-    pink: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
-  }
-
   // 全选/取消全选（当前页）
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -380,33 +304,13 @@ export function Accounts() {
     return timeStr.slice(0, 5) // 只显示 HH:MM
   }
 
-  // 计算健康度（距离上次执行的天数）
-  const getHealthInfo = (lastExecDate?: string) => {
-    if (!lastExecDate) {
-      return { days: null, color: 'gray', label: '无记录' }
-    }
-    const lastDate = new Date(lastExecDate)
-    const today = new Date()
-    const diffTime = today.getTime() - lastDate.getTime()
-    const days = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-
-    if (days < 60) {
-      return { days, color: 'green', label: `${days}天` }
-    } else if (days < 90) {
-      return { days, color: 'yellow', label: `${days}天` }
-    } else {
-      return { days, color: 'red', label: `${days}天` }
-    }
-  }
-
   // 搜索过滤
   const filteredBanks = banks.filter((bank) => {
     if (!searchQuery) return true
     const query = searchQuery.toLowerCase()
     return (
       bank.name.toLowerCase().includes(query) ||
-      (bank.group_name || '').toLowerCase().includes(query) ||
-      (bank.tags || []).some((tag) => tag.name.toLowerCase().includes(query))
+      (bank.group_name || '').toLowerCase().includes(query)
     )
   })
 
@@ -625,97 +529,6 @@ export function Accounts() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-
-              {/* 标签编辑对话框 */}
-              <Dialog open={tagDialogOpen} onOpenChange={setTagDialogOpen}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>编辑标签</DialogTitle>
-                    <DialogDescription>
-                      为 &quot;{editingBankForTags?.name}&quot; 选择或创建标签
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className='space-y-4 py-4'>
-                    {/* 已有标签选择 */}
-                    <div className='space-y-2'>
-                      <Label>选择标签</Label>
-                      <div className='flex flex-wrap gap-2'>
-                        {allTags.map((tag) => (
-                          <Badge
-                            key={tag.id}
-                            variant='outline'
-                            className={`cursor-pointer transition-all ${
-                              selectedTagIds.includes(tag.id)
-                                ? tagColors[tag.color] || tagColors.gray
-                                : 'opacity-50 hover:opacity-75'
-                            }`}
-                            onClick={() => {
-                              if (selectedTagIds.includes(tag.id)) {
-                                setSelectedTagIds(
-                                  selectedTagIds.filter((id) => id !== tag.id)
-                                )
-                              } else {
-                                setSelectedTagIds([...selectedTagIds, tag.id])
-                              }
-                            }}
-                          >
-                            {tag.name}
-                            {selectedTagIds.includes(tag.id) && (
-                              <X className='ml-1 h-3 w-3' />
-                            )}
-                          </Badge>
-                        ))}
-                        {allTags.length === 0 && (
-                          <span className='text-muted-foreground text-sm'>
-                            暂无标签
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* 创建新标签 */}
-                    <div className='space-y-2'>
-                      <Label>创建新标签</Label>
-                      <div className='flex gap-2'>
-                        <Input
-                          placeholder='输入标签名称'
-                          value={newTagName}
-                          onChange={(e) => setNewTagName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault()
-                              handleCreateTag()
-                            }
-                          }}
-                        />
-                        <Button
-                          type='button'
-                          variant='outline'
-                          onClick={handleCreateTag}
-                          disabled={!newTagName.trim()}
-                        >
-                          <Plus className='h-4 w-4' />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      type='button'
-                      variant='outline'
-                      onClick={() => setTagDialogOpen(false)}
-                    >
-                      取消
-                    </Button>
-                    <Button onClick={handleSaveTags} disabled={savingTags}>
-                      {savingTags && (
-                        <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                      )}
-                      保存
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
             </div>
           </div>
 
@@ -750,8 +563,6 @@ export function Accounts() {
                           </TableHead>
                           <TableHead>银行名称</TableHead>
                           <TableHead>分组</TableHead>
-                          <TableHead>标签</TableHead>
-                          <TableHead>健康度</TableHead>
                           <TableHead>下次执行日期</TableHead>
                           <TableHead>下次执行时间</TableHead>
                           <TableHead>收款银行</TableHead>
@@ -782,48 +593,6 @@ export function Accounts() {
                               ) : (
                                 <span className='text-muted-foreground'>-</span>
                               )}
-                            </TableCell>
-                            <TableCell>
-                              <div className='flex max-w-32 flex-wrap gap-1'>
-                                {bank.tags && bank.tags.length > 0 ? (
-                                  bank.tags.map((tag) => (
-                                    <Badge
-                                      key={tag.id}
-                                      variant='outline'
-                                      className={`text-xs ${tagColors[tag.color] || tagColors.gray}`}
-                                    >
-                                      {tag.name}
-                                    </Badge>
-                                  ))
-                                ) : (
-                                  <span className='text-muted-foreground'>
-                                    -
-                                  </span>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              {(() => {
-                                const health = getHealthInfo(
-                                  bank.last_exec_date
-                                )
-                                const colorClass = {
-                                  green:
-                                    'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-                                  yellow:
-                                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-                                  red: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-                                  gray: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
-                                }[health.color]
-                                return (
-                                  <Badge
-                                    variant='outline'
-                                    className={colorClass}
-                                  >
-                                    {health.label}
-                                  </Badge>
-                                )
-                              })()}
                             </TableCell>
                             <TableCell>
                               {formatDate(bank.next_exec_date)}
@@ -862,13 +631,6 @@ export function Accounts() {
                                     <Pencil className='mr-2 h-4 w-4' />
                                     编辑
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => openTagDialog(bank)}
-                                  >
-                                    <TagIcon className='mr-2 h-4 w-4' />
-                                    标签
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
                                   <DropdownMenuItem
                                     className='text-destructive'
                                     onClick={() => handleDelete(bank)}

@@ -29,7 +29,6 @@ export interface BankWithNextTask extends Bank {
   next_to_bank_name?: string
   next_amount?: number
   next_memo?: string
-  last_exec_date?: string
 }
 
 /** ?????? */
