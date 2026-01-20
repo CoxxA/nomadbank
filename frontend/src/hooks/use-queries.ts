@@ -8,7 +8,6 @@ import {
   notificationsApi,
   statsApi,
   strategiesApi,
-  tagsApi,
   tasksApi,
   webhooksApi,
 } from '@/lib/api'
@@ -21,7 +20,6 @@ import type {
   NotificationChannel,
   RecentActivity,
   Strategy,
-  Tag,
   Task,
   TodayTasksResponse,
   Webhook,
@@ -49,7 +47,6 @@ export const queryKeys = {
   // 其他
   strategies: ['strategies'] as const,
   notificationChannels: ['notificationChannels'] as const,
-  tags: ['tags'] as const,
   webhooks: ['webhooks'] as const,
 }
 
@@ -173,17 +170,6 @@ export function useNotificationChannels() {
 }
 
 // ============================================
-// 标签相关 Hooks
-// ============================================
-
-/** 获取标签列表 */
-export function useTags() {
-  return useQuery<Tag[]>({
-    queryKey: queryKeys.tags,
-    queryFn: () => tagsApi.list(),
-  })
-}
-
 // ============================================
 // Webhook 相关 Hooks
 // ============================================
@@ -237,7 +223,6 @@ export function useRefreshQueries() {
 
     /** 刷新标签数据 */
     refreshTags: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.tags })
     },
 
     /** 刷新通知渠道数据 */

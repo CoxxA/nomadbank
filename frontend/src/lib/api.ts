@@ -15,7 +15,6 @@ import type {
   CreateBankRequest,
   CreateChannelRequest,
   CreateStrategyRequest,
-  CreateTagRequest,
   CreateUserRequest,
   CreateWebhookRequest,
   DashboardStats,
@@ -28,15 +27,12 @@ import type {
   ResetPasswordRequest,
   Strategy,
   SystemStatus,
-  Tag,
   Task,
   TodayTasksResponse,
   UpdateBankRequest,
-  UpdateBankTagsRequest,
   UpdateChannelRequest,
   UpdateProfileRequest,
   UpdateStrategyRequest,
-  UpdateTagRequest,
   UpdateUserRequest,
   UpdateWebhookRequest,
   User,
@@ -442,22 +438,6 @@ export const statsApi = {
   },
 }
 
-/** 标签 API */
-export const tagsApi = {
-  list: () => api.get<Tag[]>('/api/v1/tags'),
-  create: (data: CreateTagRequest) => api.post<Tag>('/api/v1/tags', data),
-  update: (id: string, data: UpdateTagRequest) =>
-    api.put<Tag>(`/api/v1/tags/${id}`, data),
-  delete: (id: string) => api.delete(`/api/v1/tags/${id}`),
-  getBankTags: async (_bankId: string): Promise<Tag[]> => {
-    // Go 后端暂不支持银行标签关联
-    return []
-  },
-  updateBankTags: async (_bankId: string, _data: UpdateBankTagsRequest) => {
-    // Go 后端暂不支持
-    return {}
-  },
-}
 
 /** 导入导出 API */
 export const importExportApi = {
