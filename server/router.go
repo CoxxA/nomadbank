@@ -68,12 +68,6 @@ func (s *Server) SetupRoutes() {
 	authGroup.DELETE("/notifications/:id", notificationAPI.Delete)
 	authGroup.POST("/notifications/:id/test", notificationAPI.Test)
 
-	// 标签 API
-	tagAPI := v1.NewTagAPI(s.store)
-	authGroup.GET("/tags", tagAPI.List)
-	authGroup.POST("/tags", tagAPI.Create)
-	authGroup.DELETE("/tags/:id", tagAPI.Delete)
-
 	// 统计 API
 	statsAPI := v1.NewStatsAPI(s.store)
 	authGroup.GET("/stats/dashboard", statsAPI.Dashboard)

@@ -48,14 +48,21 @@ func NewDB(dbPath string, debug bool) (*gorm.DB, error) {
 
 // autoMigrate 自动迁移数据库表
 func autoMigrate(db *gorm.DB) error {
+	tables := []string{"bank_tags", "tags"}
+	for _, table := range tables {
+		if db.Migrator().HasTable(table) {
+			if err := db.Migrator().DropTable(table); err != nil {
+				return err
+			}
+		}
+	}
+
 	return db.AutoMigrate(
 		&model.User{},
 		&model.Bank{},
 		&model.Strategy{},
 		&model.TransferTask{},
 		&model.NotificationChannel{},
-		&model.Tag{},
-		&model.BankTag{},
 	)
 }
 

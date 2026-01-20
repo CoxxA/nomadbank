@@ -3,7 +3,6 @@ package v1
 import (
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/CoxxA/nomadbank/server/middleware"
 	"github.com/CoxxA/nomadbank/store"
@@ -25,13 +24,11 @@ func NewBankAPI(store *store.Store) *BankAPI {
 // BankWithNextTask 带下次任务信息的银行
 type BankWithNextTask struct {
 	model.Bank
-	Tags           []model.Tag `json:"tags"`
-	NextExecDate   *string     `json:"next_exec_date"`
-	NextExecTime   *string     `json:"next_exec_time"`
-	NextToBankID   *string     `json:"next_to_bank_id"`
-	NextToBankName *string     `json:"next_to_bank_name"`
-	NextAmount     *float64    `json:"next_amount"`
-	LastExecDate   *string     `json:"last_exec_date"`
+	NextExecDate   *string  `json:"next_exec_date"`
+	NextExecTime   *string  `json:"next_exec_time"`
+	NextToBankID   *string  `json:"next_to_bank_id"`
+	NextToBankName *string  `json:"next_to_bank_name"`
+	NextAmount     *float64 `json:"next_amount"`
 }
 
 // CreateBankRequest 创建银行请求
@@ -58,7 +55,7 @@ type UpdateBankRequest struct {
 func (a *BankAPI) List(c echo.Context) error {
 	userID := middleware.GetUserID(c)
 
-	banks, err := a.store.ListBanksWithTagsByUserID(userID)
+	banks, err := a.store.ListBanksByUserID(userID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "获取银行列表失败")
 	}
@@ -67,12 +64,6 @@ func (a *BankAPI) List(c echo.Context) error {
 	tasks, err := a.store.ListPendingTasksByUserID(userID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "获取任务列表失败")
-	}
-
-	// 获取所有已完成任务的最后执行日期
-	completedTasks, err := a.store.ListCompletedTasksByUserID(userID)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "获取已完成任务失败")
 	}
 
 	// 构建银行ID到名称的映射
@@ -90,22 +81,11 @@ func (a *BankAPI) List(c echo.Context) error {
 		}
 	}
 
-	// 构建银行ID到最后执行日期的映射
-	lastExecMap := make(map[string]time.Time)
-	for _, task := range completedTasks {
-		if task.CompletedAt != nil {
-			if existing, exists := lastExecMap[task.FromBankID]; !exists || task.CompletedAt.After(existing) {
-				lastExecMap[task.FromBankID] = *task.CompletedAt
-			}
-		}
-	}
-
 	// 构建响应
 	result := make([]BankWithNextTask, len(banks))
 	for i, bank := range banks {
 		result[i] = BankWithNextTask{
-			Bank: bank.Bank,
-			Tags: bank.Tags,
+			Bank: bank,
 		}
 
 		// 添加下次任务信息
@@ -120,11 +100,6 @@ func (a *BankAPI) List(c echo.Context) error {
 			result[i].NextAmount = &task.Amount
 		}
 
-		// 添加最后执行日期
-		if lastExec, exists := lastExecMap[bank.ID]; exists {
-			lastExecStr := lastExec.Format("2006-01-02")
-			result[i].LastExecDate = &lastExecStr
-		}
 	}
 
 	return c.JSON(http.StatusOK, result)

@@ -123,17 +123,6 @@ func (s *Store) ListActiveBanksByIDs(userID string, bankIDs []string) ([]model.B
 	return banks, nil
 }
 
-// ListActiveBanksByTagID 根据标签获取活跃银行
-func (s *Store) ListActiveBanksByTagID(userID string, tagID string) ([]model.Bank, error) {
-	var banks []model.Bank
-	if err := s.db.Joins("JOIN bank_tags ON bank_tags.bank_id = banks.id").
-		Where("banks.user_id = ? AND banks.is_active = ? AND bank_tags.tag_id = ?", userID, true, tagID).
-		Find(&banks).Error; err != nil {
-		return nil, err
-	}
-	return banks, nil
-}
-
 // ListActiveBanksByGroup 根据分组获取活跃银行
 func (s *Store) ListActiveBanksByGroup(userID string, groupName string) ([]model.Bank, error) {
 	var banks []model.Bank
@@ -141,70 +130,6 @@ func (s *Store) ListActiveBanksByGroup(userID string, groupName string) ([]model
 		return nil, err
 	}
 	return banks, nil
-}
-
-// BankWithTags 带标签的银行
-type BankWithTags struct {
-	model.Bank
-	Tags []model.Tag `json:"tags"`
-}
-
-// ListBanksWithTagsByUserID 获取用户的所有银行（包含标签）
-func (s *Store) ListBanksWithTagsByUserID(userID string) ([]BankWithTags, error) {
-	var banks []model.Bank
-	if err := s.db.Where("user_id = ?", userID).Find(&banks).Error; err != nil {
-		return nil, err
-	}
-
-	// 获取所有银行ID
-	bankIDs := make([]string, len(banks))
-	for i, bank := range banks {
-		bankIDs[i] = bank.ID
-	}
-
-	// 获取所有银行的标签关联
-	var bankTags []model.BankTag
-	if len(bankIDs) > 0 {
-		s.db.Where("bank_id IN ?", bankIDs).Find(&bankTags)
-	}
-
-	// 获取所有涉及的标签
-	tagIDs := make([]string, 0)
-	for _, bt := range bankTags {
-		tagIDs = append(tagIDs, bt.TagID)
-	}
-	var tags []model.Tag
-	if len(tagIDs) > 0 {
-		s.db.Where("id IN ?", tagIDs).Find(&tags)
-	}
-
-	// 构建标签ID到标签的映射
-	tagMap := make(map[string]model.Tag)
-	for _, tag := range tags {
-		tagMap[tag.ID] = tag
-	}
-
-	// 构建银行ID到标签列表的映射
-	bankTagsMap := make(map[string][]model.Tag)
-	for _, bt := range bankTags {
-		if tag, exists := tagMap[bt.TagID]; exists {
-			bankTagsMap[bt.BankID] = append(bankTagsMap[bt.BankID], tag)
-		}
-	}
-
-	// 构建结果
-	result := make([]BankWithTags, len(banks))
-	for i, bank := range banks {
-		result[i] = BankWithTags{
-			Bank: bank,
-			Tags: bankTagsMap[bank.ID],
-		}
-		if result[i].Tags == nil {
-			result[i].Tags = []model.Tag{}
-		}
-	}
-
-	return result, nil
 }
 
 // ========== Strategy 操作 ==========
@@ -351,27 +276,6 @@ func (s *Store) UpdateNotification(notification *model.NotificationChannel) erro
 // DeleteNotification 删除通知渠道
 func (s *Store) DeleteNotification(id string) error {
 	return s.db.Delete(&model.NotificationChannel{}, "id = ?", id).Error
-}
-
-// ========== Tag 操作 ==========
-
-// CreateTag 创建标签
-func (s *Store) CreateTag(tag *model.Tag) error {
-	return s.db.Create(tag).Error
-}
-
-// ListTagsByUserID 获取用户的所有标签
-func (s *Store) ListTagsByUserID(userID string) ([]model.Tag, error) {
-	var tags []model.Tag
-	if err := s.db.Where("user_id = ?", userID).Find(&tags).Error; err != nil {
-		return nil, err
-	}
-	return tags, nil
-}
-
-// DeleteTag 删除标签
-func (s *Store) DeleteTag(id string) error {
-	return s.db.Delete(&model.Tag{}, "id = ?", id).Error
 }
 
 // ========== 统计操作 ==========
