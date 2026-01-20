@@ -27,6 +27,7 @@ interface CalendarViewProps {
   onComplete?: (taskId: string) => void
   /** 跳过任务回调 */
   onSkip?: (taskId: string) => void
+  density?: 'default' | 'compact'
   className?: string
 }
 
@@ -38,6 +39,7 @@ export function CalendarView({
   onMonthChange,
   onComplete,
   onSkip,
+  density = 'default',
   className,
 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = React.useState(new Date())
@@ -45,6 +47,7 @@ export function CalendarView({
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
+  const isCompact = density === 'compact'
 
   // 当月第一天和最后一天
   const firstDayOfMonth = new Date(year, month, 1)
@@ -159,12 +162,17 @@ export function CalendarView({
   return (
     <div className={cn('w-full', className)}>
       {/* 月份导航 */}
-      <div className='mb-1 flex items-center justify-between'>
+      <div
+        className={cn(
+          'flex items-center justify-between',
+          isCompact ? 'mb-0.5' : 'mb-1'
+        )}
+      >
         <div className='flex items-center gap-1'>
           <Button
             variant='ghost'
             size='icon'
-            className='h-7 w-7'
+            className={cn('h-7 w-7', isCompact && 'h-6 w-6')}
             onClick={goToPreviousMonth}
           >
             <ChevronLeft className='h-4 w-4' />
@@ -172,19 +180,19 @@ export function CalendarView({
           <Button
             variant='ghost'
             size='icon'
-            className='h-7 w-7'
+            className={cn('h-7 w-7', isCompact && 'h-6 w-6')}
             onClick={goToNextMonth}
           >
             <ChevronRight className='h-4 w-4' />
           </Button>
         </div>
-        <span className='text-sm font-medium'>
+        <span className={cn('font-medium', isCompact ? 'text-xs' : 'text-sm')}>
           {year}年{month + 1}月
         </span>
         <Button
           variant='ghost'
           size='sm'
-          className='h-7 text-xs'
+          className={cn('h-7 text-xs', isCompact && 'h-6 text-[10px]')}
           onClick={goToToday}
         >
           今天
@@ -192,11 +200,16 @@ export function CalendarView({
       </div>
 
       {/* 星期标题 */}
-      <div className='mb-0.5 grid grid-cols-7'>
+      <div className={cn('grid grid-cols-7', isCompact ? 'mb-0' : 'mb-0.5')}>
         {WEEKDAYS.map((day) => (
           <div
             key={day}
-            className='text-muted-foreground py-0.5 text-center text-xs font-medium'
+            className={cn(
+              'text-center font-medium',
+              isCompact
+                ? 'py-0 text-[10px] text-muted-foreground/60'
+                : 'py-0.5 text-xs text-muted-foreground'
+            )}
           >
             {day}
           </div>
@@ -204,7 +217,7 @@ export function CalendarView({
       </div>
 
       {/* 日历格子 */}
-      <div className='grid grid-cols-7 gap-0.5'>
+      <div className={cn('grid grid-cols-7', isCompact ? 'gap-0' : 'gap-0.5')}>
         {weeks.flat().map((date, index) => {
           const dateKey = formatDateKey(date)
           const dayData = dataMap[dateKey]
@@ -221,7 +234,8 @@ export function CalendarView({
                 }
               }}
               className={cn(
-                'relative flex h-7 items-center justify-center rounded-md text-xs transition-colors',
+                'relative flex items-center justify-center rounded-md transition-colors',
+                isCompact ? 'h-6 text-[10px]' : 'h-7 text-xs',
                 isCurrentMonth(date)
                   ? 'text-foreground'
                   : 'text-muted-foreground/40',
@@ -249,15 +263,26 @@ export function CalendarView({
             >
               {date.getDate()}
               {hasTask && (
-                <div className='absolute bottom-0.5 left-1/2 flex -translate-x-1/2 gap-0.5'>
+                <div
+                  className={cn(
+                    'absolute left-1/2 flex -translate-x-1/2 gap-0.5',
+                    isCompact ? 'bottom-0' : 'bottom-0.5'
+                  )}
+                >
                   <div
                     className={cn(
-                      'h-1 w-1 rounded-full',
+                      'rounded-full',
+                      isCompact ? 'h-0.5 w-0.5' : 'h-1 w-1',
                       hasPending ? 'bg-orange-500' : 'bg-green-500'
                     )}
                   />
                   {dayData.task_count > 1 && (
-                    <span className='text-muted-foreground text-[8px]'>
+                    <span
+                      className={cn(
+                        'text-muted-foreground',
+                        isCompact ? 'text-[7px]' : 'text-[8px]'
+                      )}
+                    >
                       {dayData.task_count}
                     </span>
                   )}
@@ -269,7 +294,12 @@ export function CalendarView({
       </div>
 
       {/* 图例 */}
-      <div className='text-muted-foreground mt-1.5 flex items-center justify-center gap-3 text-xs'>
+      <div
+        className={cn(
+          'text-muted-foreground flex items-center justify-center gap-3 text-xs',
+          isCompact ? 'mt-1' : 'mt-1.5'
+        )}
+      >
         <div className='flex items-center gap-1'>
           <div className='h-1.5 w-1.5 rounded-full bg-orange-500' />
           <span>待执行</span>
