@@ -3,7 +3,7 @@
 # ==========================================
 bin/
 *.exe
-nomadbank
+/nomadbank
 *.test
 *.out
 
