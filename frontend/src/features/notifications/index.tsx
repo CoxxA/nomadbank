@@ -53,6 +53,7 @@ import {
   useWebhooks,
 } from '@/hooks/use-queries'
 import { notificationsApi, webhooksApi } from '@/lib/api'
+import { parseDateKey } from '@/lib/utils'
 import type {
   CreateChannelRequest,
   CreateWebhookRequest,
@@ -461,9 +462,9 @@ export function Notifications() {
                             </CardTitle>
                             <CardDescription className='text-xs'>
                               添加于{' '}
-                              {new Date(channel.created_at).toLocaleDateString(
-                                'zh-CN'
-                              )}
+                              {parseDateKey(
+                                channel.created_at
+                              ).toLocaleDateString('zh-CN')}
                             </CardDescription>
                           </div>
                         </div>

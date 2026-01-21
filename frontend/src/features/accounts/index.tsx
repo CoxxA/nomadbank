@@ -66,6 +66,7 @@ import {
   useRefreshQueries,
 } from '@/hooks/use-queries'
 import { banksApi, importExportApi } from '@/lib/api'
+import { parseDateKey } from '@/lib/utils'
 import type { BankWithNextTask, CreateBankRequest } from '@/lib/types'
 
 export function Accounts() {
@@ -295,7 +296,7 @@ export function Accounts() {
   // 格式化日期
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '-'
-    return new Date(dateStr).toLocaleDateString('zh-CN')
+    return parseDateKey(dateStr).toLocaleDateString('zh-CN')
   }
 
   // 格式化时间

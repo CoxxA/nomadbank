@@ -44,11 +44,12 @@ func (a *StrategyAPI) List(c echo.Context) error {
 	}
 
 	// 确保返回空数组而不是 null
-	if strategies == nil {
-		strategies = []model.Strategy{}
+	response := make([]*StrategyResponse, 0, len(strategies))
+	for i := range strategies {
+		response = append(response, toStrategyResponse(&strategies[i]))
 	}
 
-	return c.JSON(http.StatusOK, strategies)
+	return c.JSON(http.StatusOK, response)
 }
 
 // Create 创建策略
@@ -114,7 +115,7 @@ func (a *StrategyAPI) Create(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "创建策略失败")
 	}
 
-	return c.JSON(http.StatusCreated, strategy)
+	return c.JSON(http.StatusCreated, toStrategyResponse(strategy))
 }
 
 // Get 获取策略详情
@@ -132,7 +133,7 @@ func (a *StrategyAPI) Get(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusForbidden, "无权访问")
 	}
 
-	return c.JSON(http.StatusOK, strategy)
+	return c.JSON(http.StatusOK, toStrategyResponse(strategy))
 }
 
 // Update 更新策略
@@ -200,7 +201,7 @@ func (a *StrategyAPI) Update(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "更新策略失败")
 	}
 
-	return c.JSON(http.StatusOK, strategy)
+	return c.JSON(http.StatusOK, toStrategyResponse(strategy))
 }
 
 // Delete 删除策略

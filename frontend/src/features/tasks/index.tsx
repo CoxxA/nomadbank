@@ -77,6 +77,7 @@ import {
   useTasks,
 } from '@/hooks/use-queries'
 import { tasksApi } from '@/lib/api'
+import { parseDateKey } from '@/lib/utils'
 import type { CompleteTaskRequest, Task } from '@/lib/types'
 
 export function Tasks() {
@@ -316,9 +317,13 @@ export function Tasks() {
       return a.cycle - b.cycle
     }
     // 同一周期内按执行日期升序
-    const dateA = new Date(a.exec_date)
-    const dateB = new Date(b.exec_date)
-    return dateA.getTime() - dateB.getTime()
+    const dateA = parseDateKey(a.exec_date).getTime()
+    const dateB = parseDateKey(b.exec_date).getTime()
+    if (dateA !== dateB) return dateA - dateB
+    const timeA = getExecMinutes(a.exec_time)
+    const timeB = getExecMinutes(b.exec_time)
+    if (timeA === null || timeB === null) return 0
+    return timeA - timeB
   })
 
   // 分页
@@ -382,7 +387,7 @@ export function Tasks() {
 
   // 格式化日期 (YYYY/MM/DD)
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
+    const date = parseDateKey(dateStr)
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
@@ -390,12 +395,21 @@ export function Tasks() {
   }
 
   // 格式化时间（从完整日期时间中提取）
-  const formatTime = (dateStr: string) => {
+  const formatTime = (dateStr: string, execTime?: string) => {
+    if (execTime) return execTime
     const date = new Date(dateStr)
+    if (Number.isNaN(date.getTime())) return '-'
     return date.toLocaleTimeString('zh-CN', {
       hour: '2-digit',
       minute: '2-digit',
     })
+  }
+
+  function getExecMinutes(execTime?: string) {
+    if (!execTime) return null
+    const [hour, minute] = execTime.split(':').map(Number)
+    if (Number.isNaN(hour) || Number.isNaN(minute)) return null
+    return hour * 60 + minute
   }
 
   // 周期颜色映射
@@ -784,7 +798,7 @@ export function Tasks() {
                           <TableCell>${task.amount.toFixed(2)}</TableCell>
                           <TableCell>{formatDate(task.exec_date)}</TableCell>
                           <TableCell className='text-muted-foreground'>
-                            {formatTime(task.exec_date)}
+                            {formatTime(task.exec_date, task.exec_time)}
                           </TableCell>
                           <TableCell>{getBankName(task.to_bank_id)}</TableCell>
                           <TableCell className='text-muted-foreground max-w-[150px]'>

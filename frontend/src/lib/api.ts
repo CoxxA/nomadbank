@@ -39,6 +39,7 @@ import type {
   Webhook,
   WebhookLog,
 } from './types'
+import { getDateKey, parseDateKey } from './utils'
 
 // 重新导出所有类型
 export * from './types'
@@ -272,7 +273,7 @@ export const tasksApi = {
     const today = new Date().toISOString().split('T')[0]
     let count = 0
     for (const task of tasks) {
-      if (task.exec_date === today && task.status === 'pending') {
+      if (getDateKey(task.exec_date) === today && task.status === 'pending') {
         await api.put(`/api/v1/tasks/${task.id}/complete`)
         count++
       }
@@ -305,7 +306,8 @@ export const tasksApi = {
     }
     const sorted = tasks.sort(
       (a, b) =>
-        new Date(b.exec_date).getTime() - new Date(a.exec_date).getTime()
+        parseDateKey(b.exec_date).getTime() -
+        parseDateKey(a.exec_date).getTime()
     )
     const last = sorted[0]
     return {
@@ -352,19 +354,19 @@ export const notificationsApi = {
   getTodayTasks: async (): Promise<TodayTasksResponse> => {
     const tasks = await api.get<Task[]>('/api/v1/tasks')
     const today = new Date().toISOString().split('T')[0]
-    const todayTasks = tasks.filter((t) => t.exec_date === today)
+    const todayTasks = tasks.filter((t) => getDateKey(t.exec_date) === today)
     return {
       date: today,
       tasks: todayTasks.map((t) => ({
         id: t.id,
+        exec_time: t.exec_time,
         from_bank_name: t.from_bank?.name || '',
         to_bank_name: t.to_bank?.name || '',
         amount: t.amount,
         status: t.status,
       })),
       pending_count: todayTasks.filter((t) => t.status === 'pending').length,
-      completed_count: todayTasks.filter((t) => t.status === 'completed')
-        .length,
+      completed_count: todayTasks.filter((t) => t.status === 'completed').length,
     }
   },
 }
@@ -374,17 +376,27 @@ export const statsApi = {
   dashboard: () => api.get<DashboardStats>('/api/v1/stats/dashboard'),
   recent: async (limit?: number): Promise<RecentActivity[]> => {
     const tasks = await api.get<Task[]>('/api/v1/tasks')
+    const getExecMinutes = (execTime?: string) => {
+      if (!execTime) return 0
+      const [hour, minute] = execTime.split(':').map(Number)
+      if (Number.isNaN(hour) || Number.isNaN(minute)) return 0
+      return hour * 60 + minute
+    }
+    const getSortValue = (task: Task) => {
+      const dateKey = getDateKey(task.completed_at || task.exec_date)
+      const baseTime = parseDateKey(dateKey).getTime()
+      return baseTime + getExecMinutes(task.exec_time) * 60 * 1000
+    }
     const completed = tasks
       .filter((t) => t.status === 'completed')
       .sort(
         (a, b) =>
-          new Date(b.completed_at || b.exec_date).getTime() -
-          new Date(a.completed_at || a.exec_date).getTime()
+          getSortValue(b) - getSortValue(a)
       )
       .slice(0, limit || 5)
     return completed.map((t) => ({
       id: t.id,
-      exec_date: t.exec_date,
+      exec_date: getDateKey(t.completed_at || t.exec_date),
       from_bank: t.from_bank?.name || '',
       to_bank: t.to_bank?.name || '',
       amount: t.amount,
@@ -394,17 +406,19 @@ export const statsApi = {
   nextDayTasks: async (): Promise<NextDayTasks | null> => {
     const tasks = await api.get<Task[]>('/api/v1/tasks')
     const today = new Date()
+    today.setHours(0, 0, 0, 0)
     const pending = tasks
-      .filter((t) => t.status === 'pending' && new Date(t.exec_date) > today)
+      .filter((t) => t.status === 'pending' && parseDateKey(t.exec_date) > today)
       .sort(
         (a, b) =>
-          new Date(a.exec_date).getTime() - new Date(b.exec_date).getTime()
+          parseDateKey(a.exec_date).getTime() - parseDateKey(b.exec_date).getTime()
       )
     if (pending.length === 0) return null
-    const nextDate = pending[0].exec_date
-    const nextTasks = pending.filter((t) => t.exec_date === nextDate)
+    const nextDate = getDateKey(pending[0].exec_date)
+    const nextTasks = pending.filter((t) => getDateKey(t.exec_date) === nextDate)
     const daysUntil = Math.ceil(
-      (new Date(nextDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      (parseDateKey(nextDate).getTime() - today.getTime()) /
+        (1000 * 60 * 60 * 24)
     )
     return {
       date: nextDate,
@@ -427,7 +441,7 @@ export const statsApi = {
     const end = new Date(endDate)
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().split('T')[0]
-      const dayTasks = tasks.filter((t) => t.exec_date === dateStr)
+      const dayTasks = tasks.filter((t) => getDateKey(t.exec_date) === dateStr)
       result.push({
         date: dateStr,
         task_count: dayTasks.length,

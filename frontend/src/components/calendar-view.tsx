@@ -3,7 +3,7 @@ import { CheckCircle2, ChevronLeft, ChevronRight, XCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { CalendarDay } from '@/lib/types'
-import { cn } from '@/lib/utils'
+import { cn, getDateKey } from '@/lib/utils'
 
 /** 日历任务项（用于任务详情展示） */
 interface CalendarTaskItem {
@@ -89,16 +89,17 @@ export function CalendarView({
     } else if (tasks) {
       // 从 tasks 构建数据
       tasks.forEach((task) => {
-        if (!map[task.exec_date]) {
-          map[task.exec_date] = {
-            date: task.exec_date,
+        const dateKey = getDateKey(task.exec_date)
+        if (!map[dateKey]) {
+          map[dateKey] = {
+            date: dateKey,
             task_count: 0,
             has_pending: false,
           }
         }
-        map[task.exec_date].task_count++
+        map[dateKey].task_count++
         if (task.status === 'pending') {
-          map[task.exec_date].has_pending = true
+          map[dateKey].has_pending = true
         }
       })
     }
@@ -109,7 +110,7 @@ export function CalendarView({
   // 获取选中日期的任务列表
   const selectedTasks = React.useMemo(() => {
     if (!selectedDate || !tasks) return []
-    return tasks.filter((t) => t.exec_date === selectedDate)
+    return tasks.filter((t) => getDateKey(t.exec_date) === selectedDate)
   }, [selectedDate, tasks])
 
   // 追踪是否是首次渲染（跳过首次渲染时的请求，因为父组件已加载当月数据）

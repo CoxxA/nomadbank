@@ -39,7 +39,12 @@ func (a *TaskAPI) List(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "获取任务列表失败")
 	}
 
-	return c.JSON(http.StatusOK, tasks)
+	response := make([]*TaskResponse, len(tasks))
+	for i := range tasks {
+		response[i] = toTaskResponse(&tasks[i])
+	}
+
+	return c.JSON(http.StatusOK, response)
 }
 
 // Generate 生成任务
@@ -133,7 +138,7 @@ func (a *TaskAPI) Complete(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "更新任务失败")
 	}
 
-	return c.JSON(http.StatusOK, task)
+	return c.JSON(http.StatusOK, toTaskResponse(task))
 }
 
 // DeleteAll 删除所有任务

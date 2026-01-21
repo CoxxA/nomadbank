@@ -211,6 +211,7 @@ export function useRefreshQueries() {
       queryClient.refetchQueries({ queryKey: ['tasks'] })
       queryClient.refetchQueries({ queryKey: queryKeys.taskCycles })
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard })
+      queryClient.invalidateQueries({ queryKey: ['recent'] })
       queryClient.invalidateQueries({ queryKey: queryKeys.todayTasks })
       // 任务变化会影响银行的下次任务信息，强制立即重新获取
       queryClient.refetchQueries({ queryKey: queryKeys.banksWithTasks })

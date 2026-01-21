@@ -45,18 +45,10 @@ func (a *NotificationAPI) List(c echo.Context) error {
 	}
 
 	// 构建响应（包含解析后的 config）
-	type notificationResponse struct {
-		model.NotificationChannel
-		Config map[string]interface{} `json:"config"`
-	}
-
 	// 确保返回空数组而不是 null
-	response := make([]notificationResponse, 0, len(notifications))
-	for _, n := range notifications {
-		response = append(response, notificationResponse{
-			NotificationChannel: n,
-			Config:              n.GetConfig(),
-		})
+	response := make([]*NotificationResponse, 0, len(notifications))
+	for i := range notifications {
+		response = append(response, toNotificationResponse(&notifications[i]))
 	}
 
 	return c.JSON(http.StatusOK, response)
@@ -102,7 +94,7 @@ func (a *NotificationAPI) Create(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "创建通知渠道失败")
 	}
 
-	return c.JSON(http.StatusCreated, notification)
+	return c.JSON(http.StatusCreated, toNotificationResponse(notification))
 }
 
 // Update 更新通知渠道
@@ -150,7 +142,7 @@ func (a *NotificationAPI) Update(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "更新通知渠道失败")
 	}
 
-	return c.JSON(http.StatusOK, notification)
+	return c.JSON(http.StatusOK, toNotificationResponse(notification))
 }
 
 // Delete 删除通知渠道

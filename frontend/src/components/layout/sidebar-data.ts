@@ -9,7 +9,7 @@
   User,
   Users,
 } from 'lucide-react'
-import type { SidebarData } from '../types'
+import type { SidebarData } from './types'
 
 export const sidebarData: SidebarData = {
   user: {

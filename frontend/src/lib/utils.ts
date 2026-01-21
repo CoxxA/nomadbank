@@ -58,3 +58,16 @@ export function getPageNumbers(currentPage: number, totalPages: number) {
 
   return rangeWithDots
 }
+
+export function getDateKey(value: string) {
+  if (!value) return value
+  const timeIndex = value.indexOf('T')
+  if (timeIndex !== -1) return value.slice(0, timeIndex)
+  const spaceIndex = value.indexOf(' ')
+  return spaceIndex === -1 ? value : value.slice(0, spaceIndex)
+}
+
+export function parseDateKey(value: string) {
+  const dateKey = getDateKey(value)
+  return new Date(`${dateKey}T00:00:00`)
+}
