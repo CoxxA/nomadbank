@@ -41,7 +41,7 @@ import {
   useTasks,
 } from '@/hooks/use-queries'
 import { notificationsApi, tasksApi } from '@/lib/api'
-import { cn } from '@/lib/utils'
+import { cn, parseDateKey } from '@/lib/utils'
 
 const RANGE_LABELS = {
   week: '本周',
@@ -62,7 +62,7 @@ const pad = (value: number) => String(value).padStart(2, '0')
 const formatDate = (date: Date) =>
   `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 
-const parseDate = (value: string) => new Date(`${value}T00:00:00`)
+const parseDate = (value: string) => parseDateKey(value)
 
 const getWeekRange = (baseDate: Date) => {
   const normalized = new Date(
@@ -583,7 +583,9 @@ export function Dashboard() {
           <Card className={glassCard}>
             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
               <CardTitle className='text-base'>最近活动</CardTitle>
-              <span className='text-muted-foreground text-xs'>最新 8 条</span>
+              <span className='text-muted-foreground text-xs'>
+                最新 {recentActivities.length} 条
+              </span>
             </CardHeader>
             <CardContent>
               {recentActivities.length === 0 ? (

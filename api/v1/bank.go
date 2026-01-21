@@ -22,8 +22,8 @@ func NewBankAPI(store *store.Store) *BankAPI {
 }
 
 // BankWithNextTask 带下次任务信息的银行
-type BankWithNextTask struct {
-	model.Bank
+type BankWithNextTaskResponse struct {
+	BankResponse
 	NextExecDate   *string  `json:"next_exec_date"`
 	NextExecTime   *string  `json:"next_exec_time"`
 	NextToBankID   *string  `json:"next_to_bank_id"`
@@ -82,10 +82,12 @@ func (a *BankAPI) List(c echo.Context) error {
 	}
 
 	// 构建响应
-	result := make([]BankWithNextTask, len(banks))
-	for i, bank := range banks {
-		result[i] = BankWithNextTask{
-			Bank: bank,
+	result := make([]BankWithNextTaskResponse, 0, len(banks))
+	for i := range banks {
+		bank := banks[i]
+		response := BankWithNextTaskResponse{}
+		if bankResponse := toBankResponse(&bank); bankResponse != nil {
+			response.BankResponse = *bankResponse
 		}
 
 		// 添加下次任务信息
@@ -93,13 +95,14 @@ func (a *BankAPI) List(c echo.Context) error {
 			execDate := task.ExecDate.Format("2006-01-02")
 			execTime := task.ExecDate.Format("15:04")
 			toBankName := bankNameMap[task.ToBankID]
-			result[i].NextExecDate = &execDate
-			result[i].NextExecTime = &execTime
-			result[i].NextToBankID = &task.ToBankID
-			result[i].NextToBankName = &toBankName
-			result[i].NextAmount = &task.Amount
+			response.NextExecDate = &execDate
+			response.NextExecTime = &execTime
+			response.NextToBankID = &task.ToBankID
+			response.NextToBankName = &toBankName
+			response.NextAmount = &task.Amount
 		}
 
+		result = append(result, response)
 	}
 
 	return c.JSON(http.StatusOK, result)
@@ -146,7 +149,7 @@ func (a *BankAPI) Create(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "创建银行失败")
 	}
 
-	return c.JSON(http.StatusCreated, bank)
+	return c.JSON(http.StatusCreated, toBankResponse(bank))
 }
 
 // Get 获取银行详情
@@ -163,7 +166,7 @@ func (a *BankAPI) Get(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusForbidden, "无权访问")
 	}
 
-	return c.JSON(http.StatusOK, bank)
+	return c.JSON(http.StatusOK, toBankResponse(bank))
 }
 
 // Update 更新银行
@@ -203,7 +206,7 @@ func (a *BankAPI) Update(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "更新银行失败")
 	}
 
-	return c.JSON(http.StatusOK, bank)
+	return c.JSON(http.StatusOK, toBankResponse(bank))
 }
 
 // Delete 删除银行

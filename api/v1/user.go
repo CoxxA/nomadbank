@@ -58,7 +58,7 @@ func toUserResponse(user *model.User) *UserResponse {
 		Role:      user.Role,
 		Nickname:  user.Nickname,
 		Avatar:    user.Avatar,
-		CreatedAt: user.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		CreatedAt: formatDate(user.CreatedAt),
 	}
 }
 
