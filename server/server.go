@@ -21,6 +21,7 @@ type Server struct {
 func New(cfg *config.Config, store *store.Store) *Server {
 	e := echo.New()
 	e.HideBanner = true
+	e.HTTPErrorHandler = NewHTTPErrorHandler(cfg)
 
 	// 全局中间件
 	e.Use(echoMiddleware.Logger())
