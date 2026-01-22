@@ -1,7 +1,7 @@
 /**
  * 银行管理页面
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ChevronDown,
   ChevronLeft,
@@ -60,7 +60,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { MetricCard } from '@/components/page/metric-card'
 import { PageHeader } from '@/components/page/page-header'
 import { Main } from '@/components/layout/main'
 import {
@@ -71,7 +70,6 @@ import {
 import { banksApi, importExportApi } from '@/lib/api'
 import { parseDateKey } from '@/lib/utils'
 import type { BankWithNextTask, CreateBankRequest } from '@/lib/types'
-import { getAccountsSummary } from '@/features/accounts/summary'
 
 export function Accounts() {
   const { refreshBanks } = useRefreshQueries()
@@ -309,16 +307,6 @@ export function Accounts() {
     }
   }
 
-  const summary = useMemo(() => getAccountsSummary(banks), [banks])
-  const groupCount = useMemo(
-    () => new Set(banks.map((bank) => bank.group_name).filter(Boolean)).size,
-    [banks]
-  )
-  const ungroupedCount = useMemo(
-    () => banks.filter((bank) => !bank.group_name).length,
-    [banks]
-  )
-
   // 格式化日期
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '-'
@@ -481,59 +469,8 @@ export function Accounts() {
             }
           />
 
-          <div className='grid gap-2 md:grid-cols-2 xl:grid-cols-4'>
-            <MetricCard
-              label='总银行数'
-              value={summary.total}
-              description={`启用 ${summary.active} · 停用 ${summary.inactive}`}
-              size='dense'
-            />
-            <MetricCard
-              label='启用银行'
-              value={summary.active}
-              description={
-                summary.total
-                  ? `启用率 ${Math.round(
-                      (summary.active / summary.total) * 100
-                    )}%`
-                  : '暂无银行'
-              }
-              size='dense'
-            />
-            <MetricCard
-              label='分组数量'
-              value={groupCount}
-              description={`未分组 ${ungroupedCount}`}
-              size='dense'
-            />
-            <MetricCard
-              label='下一次转账'
-              value={
-                summary.nextTransfer
-                  ? formatDate(summary.nextTransfer.date)
-                  : '暂无'
-              }
-              description={
-                summary.nextTransfer
-                  ? [
-                      summary.nextTransfer.time
-                        ? formatTime(summary.nextTransfer.time)
-                        : null,
-                      summary.nextTransfer.toBank || null,
-                      summary.nextTransfer.amount !== undefined
-                        ? `$${summary.nextTransfer.amount.toFixed(2)}`
-                        : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')
-                  : '暂无待转账'
-              }
-              size='dense'
-            />
-          </div>
-
-          <Card className='border-border/60 bg-white/80 py-4 gap-4'>
-            <CardHeader className='space-y-3 px-4 pb-4'>
+          <Card className='border-border/60 bg-white/80'>
+            <CardHeader className='space-y-4'>
               <div className='flex flex-col gap-2 md:flex-row md:items-center md:justify-between'>
                 <div>
                   <CardTitle>银行列表</CardTitle>
@@ -552,14 +489,14 @@ export function Accounts() {
                     placeholder='搜索银行或分组...'
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className='h-9 w-full pl-8 text-sm'
+                    className='w-full pl-8'
                   />
                 </div>
                 <Select
                   value={groupFilter}
                   onValueChange={(value) => setGroupFilter(value)}
                 >
-                  <SelectTrigger className='h-9 w-full lg:w-48 text-sm'>
+                  <SelectTrigger className='w-full lg:w-48'>
                     <SelectValue placeholder='全部分组' />
                   </SelectTrigger>
                   <SelectContent>
@@ -576,7 +513,7 @@ export function Accounts() {
                   value={statusFilter}
                   onValueChange={(value) => setStatusFilter(value)}
                 >
-                  <SelectTrigger className='h-9 w-full lg:w-40 text-sm'>
+                  <SelectTrigger className='w-full lg:w-40'>
                     <SelectValue placeholder='全部状态' />
                   </SelectTrigger>
                   <SelectContent>
@@ -648,7 +585,7 @@ export function Accounts() {
                 </div>
               )}
             </CardHeader>
-            <CardContent className='px-4'>
+            <CardContent>
               {loading ? (
                 <div className='flex items-center justify-center py-10'>
                   <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
@@ -660,7 +597,7 @@ export function Accounts() {
               ) : (
                 <>
                   <div className='overflow-x-auto'>
-                    <Table className='text-[13px] [&_th]:h-9 [&_th]:py-1 [&_td]:py-1.5 [&_td]:px-2'>
+                    <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead className='w-12'>

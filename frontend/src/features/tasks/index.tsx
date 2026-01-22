@@ -70,7 +70,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
-import { MetricCard } from '@/components/page/metric-card'
 import { PageHeader } from '@/components/page/page-header'
 import { Main } from '@/components/layout/main'
 import {
@@ -84,7 +83,6 @@ import {
 import { tasksApi } from '@/lib/api'
 import { parseDateKey } from '@/lib/utils'
 import type { CompleteTaskRequest, Task } from '@/lib/types'
-import { getTasksSummary } from '@/features/tasks/summary'
 
 export function Tasks() {
   const { refreshTasks } = useRefreshQueries()
@@ -123,7 +121,6 @@ export function Tasks() {
   const cycles = cyclesData?.cycles || []
   const groups = groupsData?.groups || []
   const loading = tasksLoading
-  const summary = useMemo(() => getTasksSummary(tasks), [tasks])
   const bankGroupMap = useMemo(
     () =>
       new Map(
@@ -573,45 +570,6 @@ export function Tasks() {
             }
           />
 
-          <div className='grid gap-2 md:grid-cols-2 xl:grid-cols-4'>
-            <MetricCard
-              label='总任务数'
-              value={summary.total}
-              description={`待处理 ${summary.pending} · 已完成 ${summary.completed}`}
-              size='dense'
-            />
-            <MetricCard
-              label='待处理任务'
-              value={summary.pending}
-              description={
-                summary.total
-                  ? `占比 ${Math.round(
-                      (summary.pending / summary.total) * 100
-                    )}%`
-                  : '暂无任务'
-              }
-              size='dense'
-            />
-            <MetricCard
-              label='已完成任务'
-              value={summary.completed}
-              description={`已跳过 ${summary.skipped}`}
-              size='dense'
-            />
-            <MetricCard
-              label='最近完成'
-              value={
-                summary.lastCompletedAt
-                  ? formatDate(summary.lastCompletedAt)
-                  : '暂无'
-              }
-              description={
-                summary.lastCompletedAt ? '最近一次完成任务' : '暂无完成记录'
-              }
-              size='dense'
-            />
-          </div>
-
           {/* 生成任务对话框 */}
           <Dialog
             open={generateDialogOpen}
@@ -776,8 +734,8 @@ export function Tasks() {
               </CardContent>
             </Card>
           ) : (
-            <Card className='border-border/60 bg-white/80 py-4 gap-4'>
-              <CardHeader className='space-y-3 px-4 pb-4'>
+            <Card className='border-border/60 bg-white/80'>
+              <CardHeader className='space-y-4'>
                 <div>
                   <CardTitle className='text-base'>任务历史</CardTitle>
                   <CardDescription>
@@ -790,21 +748,21 @@ export function Tasks() {
                 <div className='flex flex-col gap-3 lg:flex-row lg:items-center'>
                   <div className='relative w-full lg:w-72'>
                     <SearchIcon className='text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4' />
-                    <Input
-                      placeholder='搜索银行、备注、金额...'
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className='h-9 w-full pl-8 text-sm'
-                    />
-                  </div>
-                  <Select
-                    value={statusFilter}
-                    onValueChange={setStatusFilter}
-                  >
-                    <SelectTrigger className='h-9 w-full lg:w-36 text-sm'>
-                      <Filter className='mr-2 h-4 w-4' />
-                      <SelectValue placeholder='状态' />
-                    </SelectTrigger>
+                  <Input
+                    placeholder='搜索银行、备注、金额...'
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className='w-full pl-8'
+                  />
+                </div>
+                <Select
+                  value={statusFilter}
+                  onValueChange={setStatusFilter}
+                >
+                  <SelectTrigger className='w-full lg:w-36'>
+                    <Filter className='mr-2 h-4 w-4' />
+                    <SelectValue placeholder='状态' />
+                  </SelectTrigger>
                     <SelectContent>
                       <SelectItem value='all'>全部状态</SelectItem>
                       <SelectItem value='pending'>待执行</SelectItem>
@@ -812,13 +770,13 @@ export function Tasks() {
                       <SelectItem value='skipped'>已跳过</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Select
-                    value={cycleFilter}
-                    onValueChange={setCycleFilter}
-                  >
-                    <SelectTrigger className='h-9 w-full lg:w-36 text-sm'>
-                      <SelectValue placeholder='周期' />
-                    </SelectTrigger>
+                <Select
+                  value={cycleFilter}
+                  onValueChange={setCycleFilter}
+                >
+                  <SelectTrigger className='w-full lg:w-36'>
+                    <SelectValue placeholder='周期' />
+                  </SelectTrigger>
                     <SelectContent>
                       <SelectItem value='all'>全部周期</SelectItem>
                       {cycles.map((cycle) => (
@@ -828,13 +786,13 @@ export function Tasks() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Select
-                    value={groupFilter}
-                    onValueChange={setGroupFilter}
-                  >
-                    <SelectTrigger className='h-9 w-full lg:w-44 text-sm'>
-                      <SelectValue placeholder='分组' />
-                    </SelectTrigger>
+                <Select
+                  value={groupFilter}
+                  onValueChange={setGroupFilter}
+                >
+                  <SelectTrigger className='w-full lg:w-44'>
+                    <SelectValue placeholder='分组' />
+                  </SelectTrigger>
                     <SelectContent>
                       <SelectItem value='all'>全部分组</SelectItem>
                       <SelectItem value='ungrouped'>未分组</SelectItem>
@@ -911,9 +869,9 @@ export function Tasks() {
                   </div>
                 )}
               </CardHeader>
-              <CardContent className='px-4'>
+              <CardContent>
                 <div className='overflow-x-auto'>
-                  <Table className='text-[13px] [&_th]:h-9 [&_th]:py-1 [&_td]:py-1.5 [&_td]:px-2'>
+                  <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead className='w-12'>
