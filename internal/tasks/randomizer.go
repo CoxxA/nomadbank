@@ -17,15 +17,25 @@ type Randomizer interface {
 }
 
 type randomizer struct {
-    rng Rand
+	rng Rand
+}
+
+type globalRand struct{}
+
+func (globalRand) Intn(n int) int {
+	return rand.Intn(n)
+}
+
+func (globalRand) Float64() float64 {
+	return rand.Float64()
 }
 
 func NewRandomizer(rng Rand) Randomizer {
-    return &randomizer{rng: rng}
+	return &randomizer{rng: rng}
 }
 
 func NewDefaultRandomizer() Randomizer {
-    return NewRandomizer(rand.New(rand.NewSource(time.Now().UnixNano())))
+	return NewRandomizer(globalRand{})
 }
 
 func (r *randomizer) IntervalDays(min, max int) int {
