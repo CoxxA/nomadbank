@@ -18,14 +18,20 @@ export function MetricCard({
 }: MetricCardProps) {
   const isCompact = size === 'compact'
   return (
-    <Card className={cn('glass-card', className)}>
+    <Card
+      className={cn(
+        'glass-card',
+        isCompact && 'gap-3 rounded-lg py-3',
+        className
+      )}
+    >
       <CardContent
         className={cn('space-y-2', isCompact ? 'p-3' : 'p-4')}
       >
         <p
           className={cn(
             'text-muted-foreground',
-            isCompact ? 'text-xs' : 'text-sm'
+            isCompact ? 'text-[11px] leading-snug' : 'text-sm'
           )}
         >
           {label}
@@ -33,7 +39,7 @@ export function MetricCard({
         <div
           className={cn(
             'font-semibold text-foreground',
-            isCompact ? 'text-xl' : 'text-2xl'
+            isCompact ? 'text-lg leading-tight' : 'text-2xl'
           )}
         >
           {value}
@@ -42,7 +48,7 @@ export function MetricCard({
           <p
             className={cn(
               'text-muted-foreground',
-              isCompact ? 'text-xs' : 'text-sm'
+              isCompact ? 'text-[11px] leading-snug' : 'text-sm'
             )}
           >
             {description}

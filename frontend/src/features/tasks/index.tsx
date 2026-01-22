@@ -522,7 +522,7 @@ export function Tasks() {
   return (
     <>
       <Main>
-        <div className='space-y-8'>
+        <div className='space-y-6'>
           <PageHeader
             title='任务管理'
             description='筛选任务状态、快速执行与管理任务历史'
@@ -573,11 +573,12 @@ export function Tasks() {
             }
           />
 
-          <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4'>
+          <div className='grid gap-2 md:grid-cols-2 xl:grid-cols-4'>
             <MetricCard
               label='总任务数'
               value={summary.total}
               description={`待处理 ${summary.pending} · 已完成 ${summary.completed}`}
+              size='compact'
             />
             <MetricCard
               label='待处理任务'
@@ -589,11 +590,13 @@ export function Tasks() {
                     )}%`
                   : '暂无任务'
               }
+              size='compact'
             />
             <MetricCard
               label='已完成任务'
               value={summary.completed}
               description={`已跳过 ${summary.skipped}`}
+              size='compact'
             />
             <MetricCard
               label='最近完成'
@@ -605,6 +608,7 @@ export function Tasks() {
               description={
                 summary.lastCompletedAt ? '最近一次完成任务' : '暂无完成记录'
               }
+              size='compact'
             />
           </div>
 
@@ -772,8 +776,8 @@ export function Tasks() {
               </CardContent>
             </Card>
           ) : (
-            <Card className='border-border/60 bg-white/80'>
-              <CardHeader className='space-y-4'>
+            <Card className='border-border/60 bg-white/80 py-4 gap-4'>
+              <CardHeader className='space-y-3 px-4 pb-4'>
                 <div>
                   <CardTitle className='text-base'>任务历史</CardTitle>
                   <CardDescription>
@@ -790,14 +794,14 @@ export function Tasks() {
                       placeholder='搜索银行、备注、金额...'
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className='w-full pl-8'
+                      className='h-9 w-full pl-8 text-sm'
                     />
                   </div>
                   <Select
                     value={statusFilter}
                     onValueChange={setStatusFilter}
                   >
-                    <SelectTrigger className='w-full lg:w-36'>
+                    <SelectTrigger className='h-9 w-full lg:w-36 text-sm'>
                       <Filter className='mr-2 h-4 w-4' />
                       <SelectValue placeholder='状态' />
                     </SelectTrigger>
@@ -812,7 +816,7 @@ export function Tasks() {
                     value={cycleFilter}
                     onValueChange={setCycleFilter}
                   >
-                    <SelectTrigger className='w-full lg:w-36'>
+                    <SelectTrigger className='h-9 w-full lg:w-36 text-sm'>
                       <SelectValue placeholder='周期' />
                     </SelectTrigger>
                     <SelectContent>
@@ -828,7 +832,7 @@ export function Tasks() {
                     value={groupFilter}
                     onValueChange={setGroupFilter}
                   >
-                    <SelectTrigger className='w-full lg:w-44'>
+                    <SelectTrigger className='h-9 w-full lg:w-44 text-sm'>
                       <SelectValue placeholder='分组' />
                     </SelectTrigger>
                     <SelectContent>
@@ -907,9 +911,9 @@ export function Tasks() {
                   </div>
                 )}
               </CardHeader>
-              <CardContent>
+              <CardContent className='px-4'>
                 <div className='overflow-x-auto'>
-                  <Table>
+                  <Table className='text-[13px] [&_th]:h-9 [&_th]:py-1 [&_td]:py-1.5 [&_td]:px-2'>
                     <TableHeader>
                       <TableRow>
                         <TableHead className='w-12'>

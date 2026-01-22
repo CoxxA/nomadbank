@@ -368,7 +368,7 @@ export function Accounts() {
   return (
     <>
       <Main>
-        <div className='space-y-8'>
+        <div className='space-y-6'>
           <PageHeader
             title='银行管理'
             description='管理银行账户、分组与下次转账计划'
@@ -481,7 +481,7 @@ export function Accounts() {
             }
           />
 
-          <div className='grid gap-3 md:grid-cols-2 xl:grid-cols-4'>
+          <div className='grid gap-2 md:grid-cols-2 xl:grid-cols-4'>
             <MetricCard
               label='总银行数'
               value={summary.total}
@@ -532,8 +532,8 @@ export function Accounts() {
             />
           </div>
 
-          <Card className='border-border/60 bg-white/80'>
-            <CardHeader className='space-y-4'>
+          <Card className='border-border/60 bg-white/80 py-4 gap-4'>
+            <CardHeader className='space-y-3 px-4 pb-4'>
               <div className='flex flex-col gap-2 md:flex-row md:items-center md:justify-between'>
                 <div>
                   <CardTitle>银行列表</CardTitle>
@@ -552,14 +552,14 @@ export function Accounts() {
                     placeholder='搜索银行或分组...'
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className='w-full pl-8'
+                    className='h-9 w-full pl-8 text-sm'
                   />
                 </div>
                 <Select
                   value={groupFilter}
                   onValueChange={(value) => setGroupFilter(value)}
                 >
-                  <SelectTrigger className='w-full lg:w-48'>
+                  <SelectTrigger className='h-9 w-full lg:w-48 text-sm'>
                     <SelectValue placeholder='全部分组' />
                   </SelectTrigger>
                   <SelectContent>
@@ -576,7 +576,7 @@ export function Accounts() {
                   value={statusFilter}
                   onValueChange={(value) => setStatusFilter(value)}
                 >
-                  <SelectTrigger className='w-full lg:w-40'>
+                  <SelectTrigger className='h-9 w-full lg:w-40 text-sm'>
                     <SelectValue placeholder='全部状态' />
                   </SelectTrigger>
                   <SelectContent>
@@ -648,7 +648,7 @@ export function Accounts() {
                 </div>
               )}
             </CardHeader>
-            <CardContent>
+            <CardContent className='px-4'>
               {loading ? (
                 <div className='flex items-center justify-center py-10'>
                   <Loader2 className='text-muted-foreground h-8 w-8 animate-spin' />
@@ -660,7 +660,7 @@ export function Accounts() {
               ) : (
                 <>
                   <div className='overflow-x-auto'>
-                    <Table>
+                    <Table className='text-[13px] [&_th]:h-9 [&_th]:py-1 [&_td]:py-1.5 [&_td]:px-2'>
                       <TableHeader>
                         <TableRow>
                           <TableHead className='w-12'>
