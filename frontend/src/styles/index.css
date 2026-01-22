@@ -12,6 +12,8 @@
   }
   html {
     @apply overflow-x-hidden;
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
   }
   body {
     @apply bg-background text-foreground has-[div[data-variant='inset']]:bg-sidebar min-h-svh w-full;
@@ -44,6 +46,14 @@
     textarea {
       font-size: 16px !important;
     }
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply border border-border/50 bg-white/80 backdrop-blur;
+    border-color: var(--glass-border);
+    box-shadow: var(--glass-shadow);
   }
 }
 
