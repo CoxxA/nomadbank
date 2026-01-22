@@ -5,7 +5,7 @@ type MetricCardProps = {
   label: string
   value: React.ReactNode
   description?: string
-  size?: 'default' | 'compact'
+  size?: 'default' | 'compact' | 'dense'
   className?: string
 }
 
@@ -17,21 +17,30 @@ export function MetricCard({
   className,
 }: MetricCardProps) {
   const isCompact = size === 'compact'
+  const isDense = size === 'dense'
   return (
     <Card
       className={cn(
         'glass-card',
-        isCompact && 'gap-3 rounded-lg py-3',
+        isDense && 'gap-2 rounded-lg py-2',
+        isCompact && !isDense && 'gap-3 rounded-lg py-3',
         className
       )}
     >
       <CardContent
-        className={cn('space-y-2', isCompact ? 'p-3' : 'p-4')}
+        className={cn(
+          'space-y-2',
+          isDense ? 'p-2' : isCompact ? 'p-3' : 'p-4'
+        )}
       >
         <p
           className={cn(
             'text-muted-foreground',
-            isCompact ? 'text-[11px] leading-snug' : 'text-sm'
+            isDense
+              ? 'text-[12px] leading-snug'
+              : isCompact
+                ? 'text-[11px] leading-snug'
+                : 'text-sm'
           )}
         >
           {label}
@@ -39,7 +48,11 @@ export function MetricCard({
         <div
           className={cn(
             'font-semibold text-foreground',
-            isCompact ? 'text-lg leading-tight' : 'text-2xl'
+            isDense
+              ? 'text-xl leading-tight'
+              : isCompact
+                ? 'text-lg leading-tight'
+                : 'text-2xl'
           )}
         >
           {value}
@@ -48,7 +61,11 @@ export function MetricCard({
           <p
             className={cn(
               'text-muted-foreground',
-              isCompact ? 'text-[11px] leading-snug' : 'text-sm'
+              isDense
+                ? 'text-[12px] leading-snug'
+                : isCompact
+                  ? 'text-[11px] leading-snug'
+                  : 'text-sm'
             )}
           >
             {description}

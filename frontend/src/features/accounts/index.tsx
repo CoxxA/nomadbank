@@ -486,7 +486,7 @@ export function Accounts() {
               label='总银行数'
               value={summary.total}
               description={`启用 ${summary.active} · 停用 ${summary.inactive}`}
-              size='compact'
+              size='dense'
             />
             <MetricCard
               label='启用银行'
@@ -498,13 +498,13 @@ export function Accounts() {
                     )}%`
                   : '暂无银行'
               }
-              size='compact'
+              size='dense'
             />
             <MetricCard
               label='分组数量'
               value={groupCount}
               description={`未分组 ${ungroupedCount}`}
-              size='compact'
+              size='dense'
             />
             <MetricCard
               label='下一次转账'
@@ -528,7 +528,7 @@ export function Accounts() {
                       .join(' · ')
                   : '暂无待转账'
               }
-              size='compact'
+              size='dense'
             />
           </div>
 

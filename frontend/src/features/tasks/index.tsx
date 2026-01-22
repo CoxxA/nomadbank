@@ -578,7 +578,7 @@ export function Tasks() {
               label='总任务数'
               value={summary.total}
               description={`待处理 ${summary.pending} · 已完成 ${summary.completed}`}
-              size='compact'
+              size='dense'
             />
             <MetricCard
               label='待处理任务'
@@ -590,13 +590,13 @@ export function Tasks() {
                     )}%`
                   : '暂无任务'
               }
-              size='compact'
+              size='dense'
             />
             <MetricCard
               label='已完成任务'
               value={summary.completed}
               description={`已跳过 ${summary.skipped}`}
-              size='compact'
+              size='dense'
             />
             <MetricCard
               label='最近完成'
@@ -608,7 +608,7 @@ export function Tasks() {
               description={
                 summary.lastCompletedAt ? '最近一次完成任务' : '暂无完成记录'
               }
-              size='compact'
+              size='dense'
             />
           </div>
 
