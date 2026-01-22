@@ -220,7 +220,7 @@ export function SettingsMembers() {
       <div className='space-y-4'>
         <div className='flex justify-end'>
           <Button onClick={handleCreate} size='sm'>
-            <Plus className='mr-2 h-4 w-4' />
+            <Plus className='h-4 w-4' />
             添加成员
           </Button>
         </div>
@@ -374,7 +374,7 @@ export function SettingsMembers() {
             </Button>
             <Button onClick={submitCreate} disabled={createMutation.isPending}>
               {createMutation.isPending && (
-                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                <Loader2 className='h-4 w-4 animate-spin' />
               )}
               创建
             </Button>
@@ -427,7 +427,7 @@ export function SettingsMembers() {
             </Button>
             <Button onClick={submitEdit} disabled={updateMutation.isPending}>
               {updateMutation.isPending && (
-                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                <Loader2 className='h-4 w-4 animate-spin' />
               )}
               保存
             </Button>
@@ -470,7 +470,7 @@ export function SettingsMembers() {
               disabled={resetPasswordMutation.isPending}
             >
               {resetPasswordMutation.isPending && (
-                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                <Loader2 className='h-4 w-4 animate-spin' />
               )}
               重置
             </Button>
@@ -494,7 +494,7 @@ export function SettingsMembers() {
               className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
             >
               {deleteMutation.isPending && (
-                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                <Loader2 className='h-4 w-4 animate-spin' />
               )}
               删除
             </AlertDialogAction>

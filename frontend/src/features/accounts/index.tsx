@@ -368,9 +368,9 @@ export function Accounts() {
                   disabled={importing}
                 >
                   {importing ? (
-                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                    <Loader2 className='h-4 w-4 animate-spin' />
                   ) : (
-                    <Upload className='mr-2 h-4 w-4' />
+                    <Upload className='h-4 w-4' />
                   )}
                   导入
                 </Button>
@@ -381,16 +381,16 @@ export function Accounts() {
                   disabled={exporting}
                 >
                   {exporting ? (
-                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                    <Loader2 className='h-4 w-4 animate-spin' />
                   ) : (
-                    <Download className='mr-2 h-4 w-4' />
+                    <Download className='h-4 w-4' />
                   )}
                   导出
                 </Button>
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                   <DialogTrigger asChild>
                     <Button size='sm' onClick={handleAdd}>
-                      <Plus className='mr-2 h-4 w-4' />
+                      <Plus className='h-4 w-4' />
                       添加银行
                     </Button>
                   </DialogTrigger>
@@ -448,9 +448,7 @@ export function Accounts() {
                           取消
                         </Button>
                         <Button type='submit' disabled={submitting}>
-                          {submitting && (
-                            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                          )}
+                          {submitting && <Loader2 className='h-4 w-4 animate-spin' />}
                           {editingBank ? '保存' : '添加'}
                         </Button>
                       </DialogFooter>
@@ -529,9 +527,9 @@ export function Accounts() {
                     disabled={movingGroup}
                   >
                     {movingGroup ? (
-                      <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                      <Loader2 className='h-4 w-4 animate-spin' />
                     ) : (
-                      <ChevronRight className='mr-2 h-4 w-4' />
+                      <ChevronRight className='h-4 w-4' />
                     )}
                     移动分组
                   </Button>
@@ -539,12 +537,12 @@ export function Accounts() {
                     <DropdownMenuTrigger asChild>
                       <Button variant='outline' size='sm' disabled={deleting}>
                         {deleting ? (
-                          <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                          <Loader2 className='h-4 w-4 animate-spin' />
                         ) : (
-                          <Trash2 className='mr-2 h-4 w-4' />
+                          <Trash2 className='h-4 w-4' />
                         )}
                         批量删除
-                        <ChevronDown className='ml-2 h-4 w-4' />
+                        <ChevronDown className='h-4 w-4' />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align='end'>
@@ -784,9 +782,7 @@ export function Accounts() {
                   取消
                 </Button>
                 <Button onClick={handleBatchMoveGroup} disabled={movingGroup}>
-                  {movingGroup && (
-                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                  )}
+                  {movingGroup && <Loader2 className='h-4 w-4 animate-spin' />}
                   确认移动
                 </Button>
               </DialogFooter>

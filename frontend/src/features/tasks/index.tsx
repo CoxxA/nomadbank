@@ -533,9 +533,9 @@ export function Tasks() {
                   disabled={importing}
                 >
                   {importing ? (
-                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                    <Loader2 className='h-4 w-4 animate-spin' />
                   ) : (
-                    <Upload className='mr-2 h-4 w-4' />
+                    <Upload className='h-4 w-4' />
                   )}
                   导入
                 </Button>
@@ -546,16 +546,15 @@ export function Tasks() {
                   disabled={exporting}
                 >
                   {exporting ? (
-                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                    <Loader2 className='h-4 w-4 animate-spin' />
                   ) : (
-                    <Download className='mr-2 h-4 w-4' />
+                    <Download className='h-4 w-4' />
                   )}
                   导出
                 </Button>
                 <Button
                   onClick={handleOpenGenerateDialog}
                   size='sm'
-                  className='gap-2'
                 >
                   <Plus className='h-4 w-4' />
                   生成任务
@@ -660,9 +659,7 @@ export function Tasks() {
                   取消
                 </Button>
                 <Button onClick={handleGenerate} disabled={generating}>
-                  {generating && (
-                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                  )}
+                  {generating && <Loader2 className='h-4 w-4 animate-spin' />}
                   生成任务
                 </Button>
               </DialogFooter>
@@ -706,9 +703,7 @@ export function Tasks() {
                   取消
                 </Button>
                 <Button onClick={handleComplete} disabled={completing}>
-                  {completing && (
-                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                  )}
+                  {completing && <Loader2 className='h-4 w-4 animate-spin' />}
                   确认完成
                 </Button>
               </DialogFooter>
@@ -809,12 +804,12 @@ export function Tasks() {
                       <DropdownMenuTrigger asChild>
                         <Button variant='outline' size='sm' disabled={deleting}>
                           {deleting ? (
-                            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                            <Loader2 className='h-4 w-4 animate-spin' />
                           ) : (
-                            <Trash2 className='mr-2 h-4 w-4' />
+                            <Trash2 className='h-4 w-4' />
                           )}
                           批量删除
-                          <ChevronDown className='ml-2 h-4 w-4' />
+                          <ChevronDown className='h-4 w-4' />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align='end' className='w-52'>

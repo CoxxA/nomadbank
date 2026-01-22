@@ -29,6 +29,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { PageHeader } from '@/components/page/page-header'
 import { Main } from '@/components/layout/main'
 import { useRefreshQueries, useStrategies } from '@/hooks/use-queries'
 import { strategiesApi } from '@/lib/api'
@@ -142,25 +143,24 @@ export function Strategies() {
     <>
       <Main>
         <div className='space-y-6'>
-          {/* 页面标题 */}
-          <div className='flex items-center justify-between'>
-            <div>
-              <h1 className='text-2xl font-bold'>策略管理</h1>
-              <p className='text-muted-foreground'>
-                管理保活策略，设置执行间隔、金额范围、执行时段等参数
-              </p>
-            </div>
-            <Button onClick={handleCreate}>
-              <Plus className='mr-2 h-4 w-4' />
-              新建策略
-            </Button>
-          </div>
+          <PageHeader
+            title='策略管理'
+            description='管理保活策略，设置执行间隔、金额范围、执行时段等参数'
+            actions={
+              <div className='flex flex-wrap gap-2'>
+                <Button onClick={handleCreate} size='sm'>
+                  <Plus className='h-4 w-4' />
+                  新建策略
+                </Button>
+              </div>
+            }
+          />
 
           {/* 策略列表 */}
           {loading ? (
             <div className='space-y-6'>
               {[...Array(2)].map((_, i) => (
-                <Card key={i}>
+                <Card key={i} className='border-border/60 bg-white/80'>
                   <CardHeader>
                     <div className='bg-muted h-5 w-24 animate-pulse rounded' />
                   </CardHeader>
@@ -178,7 +178,7 @@ export function Strategies() {
               ))}
             </div>
           ) : strategies.length === 0 ? (
-            <Card>
+            <Card className='border-border/60 bg-white/80'>
               <CardContent className='text-muted-foreground py-8 text-center'>
                 暂无策略，点击"新建策略"创建第一个策略
               </CardContent>
@@ -187,7 +187,7 @@ export function Strategies() {
             <div className='space-y-6'>
               {/* 系统策略 */}
               {systemStrategies.length > 0 && (
-                <Card>
+                <Card className='border-border/60 bg-white/80'>
                   <CardHeader className='pb-3'>
                     <CardTitle className='flex items-center gap-2 text-base'>
                       <div className='rounded bg-blue-500 p-1.5'>
@@ -216,7 +216,7 @@ export function Strategies() {
 
               {/* 用户策略 */}
               {userStrategies.length > 0 && (
-                <Card>
+                <Card className='border-border/60 bg-white/80'>
                   <CardHeader className='pb-3'>
                     <CardTitle className='flex items-center gap-2 text-base'>
                       <div className='rounded bg-green-500 p-1.5'>
@@ -406,7 +406,7 @@ export function Strategies() {
                   取消
                 </Button>
                 <Button onClick={handleSave} disabled={saving}>
-                  {saving && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+                  {saving && <Loader2 className='h-4 w-4 animate-spin' />}
                   保存
                 </Button>
               </DialogFooter>
