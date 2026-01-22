@@ -140,9 +140,8 @@ export function Accounts() {
       await banksApi.delete(bank.id)
       toast.success('删除成功')
       refreshBanks()
-    } catch (error) {
+    } catch {
       toast.error('删除失败')
-      console.error(error)
     }
   }
 
@@ -178,9 +177,8 @@ export function Accounts() {
       toast.success(result.message)
       setSelectedBanks(new Set())
       refreshBanks()
-    } catch (error) {
+    } catch {
       toast.error('删除失败')
-      console.error(error)
     } finally {
       setDeleting(false)
     }
@@ -210,9 +208,8 @@ export function Accounts() {
       setSelectedBanks(new Set())
       setMoveGroupDialogOpen(false)
       refreshBanks()
-    } catch (error) {
+    } catch {
       toast.error('移动分组失败')
-      console.error(error)
     } finally {
       setMovingGroup(false)
     }
@@ -259,9 +256,8 @@ export function Accounts() {
       }
       setDialogOpen(false)
       refreshBanks()
-    } catch (error) {
+    } catch {
       toast.error(editingBank ? '更新失败' : '添加失败')
-      console.error(error)
     } finally {
       setSubmitting(false)
     }
@@ -279,16 +275,12 @@ export function Accounts() {
         toast.warning(
           `导入完成: 成功 ${result.success_count} 条，失败 ${result.error_count} 条`
         )
-        if (result.errors.length > 0) {
-          console.error('导入错误:', result.errors)
-        }
       } else {
         toast.success(`导入成功: ${result.success_count} 条记录`)
       }
       refreshBanks()
-    } catch (error) {
+    } catch {
       toast.error('导入失败')
-      console.error(error)
     } finally {
       setImporting(false)
       // 重置 file input

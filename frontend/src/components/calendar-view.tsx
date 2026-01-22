@@ -55,7 +55,6 @@ export function CalendarView({
 
   // 日历开始日期（上月末尾填充）
   const startDay = firstDayOfMonth.getDay()
-  const calendarStart = new Date(year, month, 1 - startDay)
 
   // 计算需要显示的周数（5或6周）
   const totalDays = startDay + lastDayOfMonth.getDate()
@@ -65,6 +64,7 @@ export function CalendarView({
   const weeks = React.useMemo(() => {
     const result: Date[][] = []
     let currentWeek: Date[] = []
+    const calendarStart = new Date(year, month, 1 - startDay)
     const tempDate = new Date(calendarStart)
 
     for (let i = 0; i < weeksNeeded * 7; i++) {
@@ -76,7 +76,7 @@ export function CalendarView({
       }
     }
     return result
-  }, [calendarStart, weeksNeeded])
+  }, [year, month, startDay, weeksNeeded])
 
   // 创建日期到数据的映射
   const dataMap = React.useMemo(() => {

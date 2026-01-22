@@ -168,9 +168,8 @@ export function Tasks() {
       setCompleteDialogOpen(false)
       setCompletingTask(null)
       refreshTasks()
-    } catch (error) {
+    } catch {
       toast.error('操作失败')
-      console.error(error)
     } finally {
       setCompleting(false)
     }
@@ -182,9 +181,8 @@ export function Tasks() {
       await tasksApi.complete(task.id)
       toast.success('任务已完成')
       refreshTasks()
-    } catch (error) {
+    } catch {
       toast.error('操作失败')
-      console.error(error)
     }
   }
 
@@ -194,9 +192,8 @@ export function Tasks() {
       await tasksApi.skip(task.id)
       toast.success('任务已跳过')
       refreshTasks()
-    } catch (error) {
+    } catch {
       toast.error('操作失败')
-      console.error(error)
     }
   }
 
@@ -208,9 +205,8 @@ export function Tasks() {
       await tasksApi.delete(task.id)
       toast.success('任务已删除')
       refreshTasks()
-    } catch (error) {
+    } catch {
       toast.error('删除失败')
-      console.error(error)
     }
   }
 
@@ -252,9 +248,8 @@ export function Tasks() {
       toast.success(result.message)
       setSelectedTasks(new Set())
       refreshTasks()
-    } catch (error) {
+    } catch {
       toast.error('删除失败')
-      console.error(error)
     } finally {
       setDeleting(false)
     }
@@ -294,7 +289,6 @@ export function Tasks() {
       refreshTasks()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '生成任务失败')
-      console.error(error)
     } finally {
       setGenerating(false)
     }

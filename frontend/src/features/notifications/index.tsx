@@ -107,9 +107,8 @@ export function Notifications() {
       setDialogOpen(false)
       setFormData({})
       refreshNotificationChannels()
-    } catch (error) {
+    } catch {
       toast.error('添加失败')
-      console.error(error)
     } finally {
       setSubmitting(false)
     }
@@ -123,9 +122,8 @@ export function Notifications() {
       await notificationsApi.deleteChannel(channel.id)
       toast.success('删除成功')
       refreshNotificationChannels()
-    } catch (error) {
+    } catch {
       toast.error('删除失败')
-      console.error(error)
     }
   }
 
@@ -137,9 +135,8 @@ export function Notifications() {
       })
       toast.success(channel.is_enabled ? '已停用' : '已启用')
       refreshNotificationChannels()
-    } catch (error) {
+    } catch {
       toast.error('操作失败')
-      console.error(error)
     }
   }
 
@@ -152,9 +149,8 @@ export function Notifications() {
         '这是一条测试通知，来自 NomadBankKeeper'
       )
       toast.success('测试通知已发送')
-    } catch (error) {
+    } catch {
       toast.error('发送测试通知失败')
-      console.error(error)
     } finally {
       setTestingId(null)
     }
@@ -200,9 +196,8 @@ export function Notifications() {
         events: ['task.completed'],
       })
       refreshWebhooks()
-    } catch (error) {
+    } catch {
       toast.error('添加 Webhook 失败')
-      console.error(error)
     } finally {
       setSubmitting(false)
     }
@@ -215,9 +210,8 @@ export function Notifications() {
       await webhooksApi.delete(webhook.id)
       toast.success('删除成功')
       refreshWebhooks()
-    } catch (error) {
+    } catch {
       toast.error('删除失败')
-      console.error(error)
     }
   }
 
@@ -226,9 +220,8 @@ export function Notifications() {
       await webhooksApi.update(webhook.id, { is_enabled: !webhook.is_enabled })
       toast.success(webhook.is_enabled ? '已停用' : '已启用')
       refreshWebhooks()
-    } catch (error) {
+    } catch {
       toast.error('操作失败')
-      console.error(error)
     }
   }
 
@@ -237,9 +230,8 @@ export function Notifications() {
     try {
       await webhooksApi.test(webhook.id)
       toast.success('测试 Webhook 已发送')
-    } catch (error) {
+    } catch {
       toast.error('发送测试失败')
-      console.error(error)
     } finally {
       setTestingWebhookId(null)
     }
