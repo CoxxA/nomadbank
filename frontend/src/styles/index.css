@@ -12,6 +12,8 @@
   }
   html {
     @apply overflow-x-hidden;
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
   }
   body {
     @apply bg-background text-foreground has-[div[data-variant='inset']]:bg-sidebar min-h-svh w-full;
