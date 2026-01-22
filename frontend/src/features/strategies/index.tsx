@@ -147,12 +147,12 @@ export function Strategies() {
             title='策略管理'
             description='管理保活策略，设置执行间隔、金额范围、执行时段等参数'
             actions={
-              <div className='flex flex-wrap gap-2'>
+              <>
                 <Button onClick={handleCreate} size='sm'>
                   <Plus className='h-4 w-4' />
                   新建策略
                 </Button>
-              </div>
+              </>
             }
           />
 

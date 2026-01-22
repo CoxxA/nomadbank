@@ -518,7 +518,7 @@ export function Tasks() {
             title='任务管理'
             description='筛选任务状态、快速执行与管理任务历史'
             actions={
-              <div className='flex flex-wrap gap-2'>
+              <>
                 <input
                   ref={fileInputRef}
                   type='file'
@@ -552,14 +552,11 @@ export function Tasks() {
                   )}
                   导出
                 </Button>
-                <Button
-                  onClick={handleOpenGenerateDialog}
-                  size='sm'
-                >
+                <Button onClick={handleOpenGenerateDialog} size='sm'>
                   <Plus className='h-4 w-4' />
                   生成任务
                 </Button>
-              </div>
+              </>
             }
           />
 

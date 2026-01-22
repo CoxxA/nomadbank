@@ -524,9 +524,9 @@ export function Notifications() {
             title='通知设置'
             description='管理任务通知渠道与 Webhook 配置'
             actions={
-              <div className='flex flex-wrap gap-2'>
+              <>
                 {activeTab === 'channels' ? channelDialog : webhookDialog}
-              </div>
+              </>
             }
           />
 

@@ -353,7 +353,7 @@ export function Accounts() {
             title='银行管理'
             description='管理银行账户、分组与下次转账计划'
             actions={
-              <div className='flex flex-wrap gap-2'>
+              <>
                 <input
                   ref={fileInputRef}
                   type='file'
