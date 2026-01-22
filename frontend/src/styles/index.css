@@ -47,6 +47,14 @@
   }
 }
 
+@layer components {
+  .glass-card {
+    @apply border border-border/50 bg-white/80 backdrop-blur;
+    border-color: var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+}
+
 @utility container {
   margin-inline: auto;
   padding-inline: 2rem;
