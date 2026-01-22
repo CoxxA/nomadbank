@@ -481,11 +481,12 @@ export function Accounts() {
             }
           />
 
-          <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4'>
+          <div className='grid gap-3 md:grid-cols-2 xl:grid-cols-4'>
             <MetricCard
               label='总银行数'
               value={summary.total}
               description={`启用 ${summary.active} · 停用 ${summary.inactive}`}
+              size='compact'
             />
             <MetricCard
               label='启用银行'
@@ -497,11 +498,13 @@ export function Accounts() {
                     )}%`
                   : '暂无银行'
               }
+              size='compact'
             />
             <MetricCard
               label='分组数量'
               value={groupCount}
               description={`未分组 ${ungroupedCount}`}
+              size='compact'
             />
             <MetricCard
               label='下一次转账'
@@ -525,6 +528,7 @@ export function Accounts() {
                       .join(' · ')
                   : '暂无待转账'
               }
+              size='compact'
             />
           </div>
 
@@ -667,18 +671,16 @@ export function Accounts() {
                           </TableHead>
                           <TableHead>银行名称</TableHead>
                           <TableHead>分组</TableHead>
-                          <TableHead>下次转账</TableHead>
+                          <TableHead>下次执行日期</TableHead>
+                          <TableHead>下次执行时间</TableHead>
+                          <TableHead>收款银行</TableHead>
+                          <TableHead>金额</TableHead>
                           <TableHead>状态</TableHead>
                           <TableHead className='w-12'></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {paginatedBanks.map((bank) => {
-                          const hasNextTransfer =
-                            bank.next_exec_date ||
-                            bank.next_exec_time ||
-                            bank.next_to_bank_name ||
-                            bank.next_amount !== undefined
                           return (
                             <TableRow key={bank.id}>
                               <TableCell>
@@ -707,30 +709,18 @@ export function Accounts() {
                                 )}
                               </TableCell>
                               <TableCell>
-                                {hasNextTransfer ? (
-                                  <div className='space-y-1 text-sm'>
-                                    <div className='flex flex-wrap items-center gap-2 text-foreground'>
-                                      <span className='font-medium'>
-                                        {formatDate(bank.next_exec_date)}
-                                      </span>
-                                      <span className='text-muted-foreground'>
-                                        {formatTime(bank.next_exec_time)}
-                                      </span>
-                                    </div>
-                                    <div className='text-muted-foreground'>
-                                      {bank.next_to_bank_name || '-'}
-                                    </div>
-                                    <div className='font-fira-code text-foreground'>
-                                      {bank.next_amount
-                                        ? `$${bank.next_amount.toFixed(2)}`
-                                        : '-'}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <span className='text-muted-foreground'>
-                                    -
-                                  </span>
-                                )}
+                                {formatDate(bank.next_exec_date)}
+                              </TableCell>
+                              <TableCell>
+                                {formatTime(bank.next_exec_time)}
+                              </TableCell>
+                              <TableCell>
+                                {bank.next_to_bank_name || '-'}
+                              </TableCell>
+                              <TableCell>
+                                {bank.next_amount
+                                  ? `$${bank.next_amount.toFixed(2)}`
+                                  : '-'}
                               </TableCell>
                               <TableCell>
                                 <Badge
