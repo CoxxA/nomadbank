@@ -455,7 +455,7 @@ export function Accounts() {
                     </form>
                   </DialogContent>
                 </Dialog>
-              </div>
+              </>
             }
           />
 
