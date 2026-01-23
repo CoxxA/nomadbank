@@ -1,7 +1,7 @@
 /**
  * 任务管理页面 - 任务历史日志
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   CheckCircle2,
   ChevronDown,
@@ -74,7 +74,6 @@ import { PageHeader } from '@/components/page/page-header'
 import { Main } from '@/components/layout/main'
 import {
   useBankGroups,
-  useBanks,
   useRefreshQueries,
   useStrategies,
   useTaskCycles,
@@ -112,8 +111,14 @@ export function Tasks() {
   const [completing, setCompleting] = useState(false)
 
   // 使用 TanStack Query hooks 加载数据（自动缓存）
-  const { data: tasks = [], isLoading: tasksLoading } = useTasks()
-  const { data: banks = [] } = useBanks()
+  const { data: tasksPage, isLoading: tasksLoading } = useTasks({
+    page: currentPage,
+    page_size: pageSize,
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    cycle: cycleFilter !== 'all' ? Number(cycleFilter) : undefined,
+    group: groupFilter !== 'all' ? groupFilter : undefined,
+    q: searchQuery.trim() || undefined,
+  })
   const { data: strategies = [] } = useStrategies()
   const { data: cyclesData } = useTaskCycles()
   const { data: groupsData } = useBankGroups()
@@ -121,13 +126,8 @@ export function Tasks() {
   const cycles = cyclesData?.cycles || []
   const groups = groupsData?.groups || []
   const loading = tasksLoading
-  const bankGroupMap = useMemo(
-    () =>
-      new Map(
-        banks.map((bank) => [bank.id, bank.group_name || ''])
-      ),
-    [banks]
-  )
+  const tasks = tasksPage?.items ?? []
+  const totalTasks = tasksPage?.total ?? 0
 
   // 设置默认策略（使用第一个系统策略）
   useEffect(() => {
@@ -140,12 +140,6 @@ export function Tasks() {
       }
     }
   }, [strategies, generateForm.strategy_id])
-
-  // 根据银行 ID 获取银行名称
-  const getBankName = (bankId: string) => {
-    const bank = banks.find((b) => b.id === bankId)
-    return bank?.name || '未知银行'
-  }
 
   // 打开完成任务对话框
   const openCompleteDialog = (task: Task) => {
@@ -318,70 +312,9 @@ export function Tasks() {
     }
   }
 
-  // 过滤任务
-  const filteredTasks = tasks.filter((task) => {
-    // 状态筛选
-    if (statusFilter !== 'all' && task.status !== statusFilter) return false
-
-    // 周期筛选
-    if (cycleFilter !== 'all' && task.cycle !== Number(cycleFilter)) {
-      return false
-    }
-
-    // 分组筛选（匹配任一银行所属分组）
-    if (groupFilter !== 'all') {
-      const fromGroup = bankGroupMap.get(task.from_bank_id) || ''
-      const toGroup = bankGroupMap.get(task.to_bank_id) || ''
-      if (groupFilter === 'ungrouped') {
-        if (fromGroup || toGroup) return false
-      } else if (fromGroup !== groupFilter && toGroup !== groupFilter) {
-        return false
-      }
-    }
-
-    // 搜索筛选
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      const fromBankName = getBankName(task.from_bank_id).toLowerCase()
-      const toBankName = getBankName(task.to_bank_id).toLowerCase()
-      const memo = (task.memo || '').toLowerCase()
-      const amount = task.amount.toString()
-      const date = task.exec_date
-
-      return (
-        fromBankName.includes(query) ||
-        toBankName.includes(query) ||
-        memo.includes(query) ||
-        amount.includes(query) ||
-        date.includes(query)
-      )
-    }
-
-    return true
-  })
-
-  // 先按周期升序，同一周期内按执行日期升序
-  const sortedTasks = [...filteredTasks].sort((a, b) => {
-    // 先比较周期
-    if (a.cycle !== b.cycle) {
-      return a.cycle - b.cycle
-    }
-    // 同一周期内按执行日期升序
-    const dateA = parseDateKey(a.exec_date).getTime()
-    const dateB = parseDateKey(b.exec_date).getTime()
-    if (dateA !== dateB) return dateA - dateB
-    const timeA = getExecMinutes(a.exec_time)
-    const timeB = getExecMinutes(b.exec_time)
-    if (timeA === null || timeB === null) return 0
-    return timeA - timeB
-  })
-
   // 分页
-  const totalPages = Math.ceil(sortedTasks.length / pageSize)
-  const paginatedTasks = sortedTasks.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  )
+  const totalPages = Math.ceil(totalTasks / pageSize)
+  const paginatedTasks = tasks
 
   // 当筛选条件改变时重置页码
   useEffect(() => {
@@ -453,13 +386,6 @@ export function Tasks() {
       hour: '2-digit',
       minute: '2-digit',
     })
-  }
-
-  function getExecMinutes(execTime?: string) {
-    if (!execTime) return null
-    const [hour, minute] = execTime.split(':').map(Number)
-    if (Number.isNaN(hour) || Number.isNaN(minute)) return null
-    return hour * 60 + minute
   }
 
   // 周期颜色映射
@@ -674,8 +600,8 @@ export function Tasks() {
                 <DialogDescription>
                   {completingTask && (
                     <>
-                      {getBankName(completingTask.from_bank_id)} →{' '}
-                      {getBankName(completingTask.to_bank_id)}
+                      {completingTask.from_bank?.name || '-'} →{' '}
+                      {completingTask.to_bank?.name || '-'}
                       {' · '}${completingTask.amount.toFixed(2)}
                     </>
                   )}
@@ -725,7 +651,7 @@ export function Tasks() {
                 <div>
                   <CardTitle className='text-base'>任务历史</CardTitle>
                   <CardDescription>
-                    共 {filteredTasks.length} 个任务
+                    共 {totalTasks} 个任务
                     {selectedTasks.size > 0 &&
                       ` · 已选择 ${selectedTasks.size} 个`}
                   </CardDescription>
@@ -890,14 +816,14 @@ export function Tasks() {
                           </TableCell>
                           <TableCell>{getCycleBadge(task.cycle)}</TableCell>
                           <TableCell className='font-medium'>
-                            {getBankName(task.from_bank_id)}
+                            {task.from_bank?.name || '-'}
                           </TableCell>
                           <TableCell>${task.amount.toFixed(2)}</TableCell>
                           <TableCell>{formatDate(task.exec_date)}</TableCell>
                           <TableCell className='text-muted-foreground'>
                             {formatTime(task.exec_date, task.exec_time)}
                           </TableCell>
-                          <TableCell>{getBankName(task.to_bank_id)}</TableCell>
+                          <TableCell>{task.to_bank?.name || '-'}</TableCell>
                           <TableCell className='text-muted-foreground max-w-[150px]'>
                             <div className='space-y-0.5'>
                               {task.memo && (

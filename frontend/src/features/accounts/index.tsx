@@ -74,21 +74,6 @@ import type { BankWithNextTask, CreateBankRequest } from '@/lib/types'
 export function Accounts() {
   const { refreshBanks } = useRefreshQueries()
 
-  // 使用 TanStack Query hooks 加载数据（自动缓存）
-  const {
-    data: banks = [],
-    isLoading: banksLoading,
-    refetch,
-  } = useBanksWithNextTasks()
-  const { data: groupsData } = useBankGroups()
-  // 页面切换时强制刷新数据
-  useEffect(() => {
-    refetch()
-  }, [refetch])
-
-  const groups = groupsData?.groups || []
-  const loading = banksLoading
-
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingBank, setEditingBank] = useState<BankWithNextTask | null>(null)
   const [formData, setFormData] = useState<CreateBankRequest>({
@@ -110,6 +95,29 @@ export function Accounts() {
   const [moveGroupDialogOpen, setMoveGroupDialogOpen] = useState(false)
   const [selectedMoveGroup, setSelectedMoveGroup] = useState<string>('')
   const [movingGroup, setMovingGroup] = useState(false)
+
+  // 使用 TanStack Query hooks 加载数据（自动缓存）
+  const {
+    data: banksPage,
+    isLoading: banksLoading,
+    refetch,
+  } = useBanksWithNextTasks({
+    page: currentPage,
+    page_size: pageSize,
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    group: groupFilter !== 'all' ? groupFilter : undefined,
+    q: searchQuery.trim() || undefined,
+  })
+  const { data: groupsData } = useBankGroups()
+  // 页面切换时强制刷新数据
+  useEffect(() => {
+    refetch()
+  }, [refetch])
+
+  const groups = groupsData?.groups || []
+  const banks = banksPage?.items ?? []
+  const totalBanks = banksPage?.total ?? 0
+  const loading = banksLoading
   // 打开新增对话框
   const handleAdd = () => {
     setEditingBank(null)
@@ -218,7 +226,7 @@ export function Accounts() {
   // 全选/取消全选（当前页）
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedBanks(new Set(paginatedBanks.map((b) => b.id)))
+      setSelectedBanks(new Set(banks.map((b) => b.id)))
     } else {
       setSelectedBanks(new Set())
     }
@@ -311,31 +319,8 @@ export function Accounts() {
     return timeStr.slice(0, 5) // 只显示 HH:MM
   }
 
-  // 搜索过滤
-  const filteredBanks = banks.filter((bank) => {
-    if (statusFilter === 'active' && !bank.is_active) return false
-    if (statusFilter === 'inactive' && bank.is_active) return false
-    if (groupFilter !== 'all') {
-      if (groupFilter === 'ungrouped') {
-        if (bank.group_name) return false
-      } else if (bank.group_name !== groupFilter) {
-        return false
-      }
-    }
-    if (!searchQuery) return true
-    const query = searchQuery.toLowerCase()
-    return (
-      bank.name.toLowerCase().includes(query) ||
-      (bank.group_name || '').toLowerCase().includes(query)
-    )
-  })
-
   // 分页
-  const totalPages = Math.ceil(filteredBanks.length / pageSize)
-  const paginatedBanks = filteredBanks.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  )
+  const totalPages = Math.ceil(totalBanks / pageSize)
 
   // 当搜索条件改变时重置页码
   useEffect(() => {
@@ -343,7 +328,7 @@ export function Accounts() {
   }, [searchQuery, statusFilter, groupFilter])
 
   const isAllSelected =
-    paginatedBanks.length > 0 && selectedBanks.size === paginatedBanks.length
+    banks.length > 0 && selectedBanks.size === banks.length
 
   return (
     <>
@@ -465,7 +450,7 @@ export function Accounts() {
                 <div>
                   <CardTitle>银行列表</CardTitle>
                   <CardDescription>
-                    共 {filteredBanks.length} 个银行
+                    共 {totalBanks} 个银行
                     {selectedBanks.size > 0 &&
                       ` · 已选择 ${selectedBanks.size} 个`}
                   </CardDescription>
@@ -607,7 +592,7 @@ export function Accounts() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {paginatedBanks.map((bank) => {
+                        {banks.map((bank) => {
                           return (
                             <TableRow key={bank.id}>
                               <TableCell>

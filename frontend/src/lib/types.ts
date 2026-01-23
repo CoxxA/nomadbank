@@ -7,6 +7,30 @@
 // ??????
 // ============================================
 
+export interface PagedResult<T> {
+  items: T[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export interface BankListParams {
+  page?: number
+  page_size?: number
+  status?: string
+  group?: string
+  q?: string
+}
+
+export interface TaskListParams {
+  page?: number
+  page_size?: number
+  status?: string
+  cycle?: number
+  group?: string
+  q?: string
+}
+
 /** ?????? */
 export interface Bank {
   id: string
@@ -26,6 +50,7 @@ export interface Bank {
 export interface BankWithNextTask extends Bank {
   next_exec_date?: string
   next_exec_time?: string
+  next_to_bank_id?: string
   next_to_bank_name?: string
   next_amount?: number
   next_memo?: string

@@ -34,11 +34,11 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   useCalendarData,
   useDashboardStats,
+  useAllTasks,
   useNextDayTasks,
   useRecentActivities,
   useRefreshQueries,
   useTodayTasks,
-  useTasks,
 } from '@/hooks/use-queries'
 import { notificationsApi, tasksApi } from '@/lib/api'
 import { cn, parseDateKey } from '@/lib/utils'
@@ -114,7 +114,7 @@ export function Dashboard() {
   }, [calendarMonth])
 
   const { data: stats, isLoading: statsLoading } = useDashboardStats()
-  const { data: tasks = [], isLoading: tasksLoading } = useTasks()
+  const { data: tasks = [], isLoading: tasksLoading } = useAllTasks()
   const { data: recentActivities = [] } = useRecentActivities(8)
   const { data: nextDayTasks } = useNextDayTasks()
   const { data: todayTasks } = useTodayTasks()

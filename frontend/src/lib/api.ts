@@ -6,6 +6,7 @@ import type {
   Bank,
   BankBatchDeleteRequest,
   BankBatchUpdateGroupRequest,
+  BankListParams,
   BankWithNextTask,
   BatchDeleteRequest,
   BatchPostponeRequest,
@@ -23,11 +24,13 @@ import type {
   LastTaskInfo,
   NextDayTasks,
   NotificationChannel,
+  PagedResult,
   RecentActivity,
   ResetPasswordRequest,
   Strategy,
   SystemStatus,
   Task,
+  TaskListParams,
   TodayTasksResponse,
   UpdateBankRequest,
   UpdateChannelRequest,
@@ -51,6 +54,7 @@ export * from './types'
 // 生产模式使用同源，开发模式使用环境变量或代理
 const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 const DEFAULT_TIMEOUT = 30000
+const MAX_PAGE_SIZE = 100
 const ACCESS_TOKEN_KEY = 'nomad-bank-access-token'
 
 // ============================================
@@ -108,6 +112,18 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 interface FetchOptions extends RequestInit {
   params?: Record<string, string>
   timeout?: number
+}
+
+type QueryParams = Record<string, string | number | undefined>
+
+function toParams(params?: QueryParams): Record<string, string> | undefined {
+  if (!params) return undefined
+  const result: Record<string, string> = {}
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === '') continue
+    result[key] = String(value)
+  }
+  return result
 }
 
 /**
@@ -205,15 +221,11 @@ export const api = {
 
 /** 银行 API */
 export const banksApi = {
-  list: () => api.get<Bank[]>('/api/v1/banks'),
-  listWithNextTasks: () => api.get<BankWithNextTask[]>('/api/v1/banks'),
-  getGroups: async (): Promise<{ groups: string[] }> => {
-    const banks = await api.get<Bank[]>('/api/v1/banks')
-    const groups = [
-      ...new Set(banks.map((b) => b.group_name).filter(Boolean)),
-    ] as string[]
-    return { groups }
-  },
+  list: (params?: BankListParams) =>
+    api.get<PagedResult<BankWithNextTask>>('/api/v1/banks', toParams(params)),
+  listWithNextTasks: (params?: BankListParams) =>
+    api.get<PagedResult<BankWithNextTask>>('/api/v1/banks', toParams(params)),
+  getGroups: () => api.get<{ groups: string[] }>('/api/v1/banks/groups'),
   get: (id: string) => api.get<Bank>(`/api/v1/banks/${id}`),
   create: (data: CreateBankRequest) => api.post<Bank>('/api/v1/banks', data),
   update: (id: string, data: UpdateBankRequest) =>
@@ -239,14 +251,27 @@ export const banksApi = {
 
 /** 任务 API */
 export const tasksApi = {
-  list: (status?: string, cycle?: number) => {
-    const params: Record<string, string> = {}
-    if (status) params.status = status
-    if (cycle) params.cycle = cycle.toString()
-    return api.get<Task[]>(
-      '/api/v1/tasks',
-      Object.keys(params).length > 0 ? params : undefined
-    )
+  list: (params?: TaskListParams) =>
+    api.get<PagedResult<Task>>('/api/v1/tasks', toParams(params)),
+  listAll: async (params?: TaskListParams): Promise<Task[]> => {
+    let page = 1
+    const items: Task[] = []
+    while (true) {
+      const pageData = await api.get<PagedResult<Task>>(
+        '/api/v1/tasks',
+        toParams({
+          ...params,
+          page,
+          page_size: MAX_PAGE_SIZE,
+        })
+      )
+      items.push(...pageData.items)
+      if (items.length >= pageData.total || pageData.items.length < MAX_PAGE_SIZE) {
+        break
+      }
+      page += 1
+    }
+    return items
   },
   generate: (data: GenerateTasksRequest) =>
     api.post<{ message: string; count: number }>(
@@ -269,7 +294,7 @@ export const tasksApi = {
     return { message: '删除成功', deleted_count: data.task_ids?.length || 0 }
   },
   batchCompleteToday: async () => {
-    const tasks = await api.get<Task[]>('/api/v1/tasks')
+    const tasks = await tasksApi.listAll()
     const today = new Date().toISOString().split('T')[0]
     let count = 0
     for (const task of tasks) {
@@ -284,16 +309,12 @@ export const tasksApi = {
     // Go 后端暂不支持，返回空结果
     return { message: '暂不支持', postponed_count: 0 }
   },
-  getCycles: async (): Promise<{ cycles: number[] }> => {
-    const tasks = await api.get<Task[]>('/api/v1/tasks')
-    const cycles = [...new Set(tasks.map((t) => t.cycle))].sort((a, b) => a - b)
-    return { cycles }
-  },
+  getCycles: () => api.get<{ cycles: number[] }>('/api/v1/tasks/cycles'),
   getLastInfo: async (
     _strategyId?: string,
     _group?: string
   ): Promise<LastTaskInfo> => {
-    const tasks = await api.get<Task[]>('/api/v1/tasks')
+    const tasks = await tasksApi.listAll()
     if (tasks.length === 0) {
       return {
         has_tasks: false,
@@ -352,7 +373,7 @@ export const notificationsApi = {
     return { message: '提醒功能暂不支持', tasks_count: 0, notified: false }
   },
   getTodayTasks: async (): Promise<TodayTasksResponse> => {
-    const tasks = await api.get<Task[]>('/api/v1/tasks')
+    const tasks = await tasksApi.listAll()
     const today = new Date().toISOString().split('T')[0]
     const todayTasks = tasks.filter((t) => getDateKey(t.exec_date) === today)
     return {
@@ -375,7 +396,7 @@ export const notificationsApi = {
 export const statsApi = {
   dashboard: () => api.get<DashboardStats>('/api/v1/stats/dashboard'),
   recent: async (limit?: number): Promise<RecentActivity[]> => {
-    const tasks = await api.get<Task[]>('/api/v1/tasks')
+    const tasks = await tasksApi.listAll()
     const getExecMinutes = (execTime?: string) => {
       if (!execTime) return 0
       const [hour, minute] = execTime.split(':').map(Number)
@@ -404,7 +425,7 @@ export const statsApi = {
     }))
   },
   nextDayTasks: async (): Promise<NextDayTasks | null> => {
-    const tasks = await api.get<Task[]>('/api/v1/tasks')
+    const tasks = await tasksApi.listAll()
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const pending = tasks
@@ -435,7 +456,7 @@ export const statsApi = {
     startDate: string,
     endDate: string
   ): Promise<CalendarDay[]> => {
-    const tasks = await api.get<Task[]>('/api/v1/tasks')
+    const tasks = await tasksApi.listAll()
     const result: CalendarDay[] = []
     const start = new Date(startDate)
     const end = new Date(endDate)
