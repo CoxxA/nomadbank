@@ -114,13 +114,13 @@ interface FetchOptions extends RequestInit {
   timeout?: number
 }
 
-type QueryParams = Record<string, string | number | undefined>
-
-function toParams(params?: QueryParams): Record<string, string> | undefined {
+function toParams<T extends object>(
+  params?: T
+): Record<string, string> | undefined {
   if (!params) return undefined
   const result: Record<string, string> = {}
-  for (const [key, value] of Object.entries(params)) {
-    if (value === undefined || value === '') continue
+  for (const [key, value] of Object.entries(params as Record<string, unknown>)) {
+    if (value === undefined || value === null || value === '') continue
     result[key] = String(value)
   }
   return result
