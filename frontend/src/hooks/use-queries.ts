@@ -3,29 +3,16 @@
  * 适配 Go 后端 API
  */
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  banksApi,
-  notificationsApi,
-  statsApi,
-  strategiesApi,
-  tasksApi,
-  webhooksApi,
-} from '@/lib/api'
+import { statsApi, webhooksApi } from '@/lib/api'
 import type {
-  BankListParams,
-  BankWithNextTask,
   CalendarDay,
   DashboardStats,
   NextDayTasks,
-  NotificationChannel,
-  PagedResult,
   RecentActivity,
-  Strategy,
-  Task,
-  TaskListParams,
-  TodayTasksResponse,
   Webhook,
 } from '@/lib/types'
+import type { BankListParams } from '@/domains/bank/types'
+import type { TaskListParams } from '@/domains/task/types'
 
 // ============================================
 // Query Keys
@@ -122,97 +109,6 @@ export function useCalendarData(startDate: string, endDate: string) {
   })
 }
 
-/** 获取今日任务 */
-export function useTodayTasks() {
-  return useQuery<TodayTasksResponse>({
-    queryKey: queryKeys.todayTasks,
-    queryFn: () => notificationsApi.getTodayTasks(),
-  })
-}
-
-// ============================================
-// 银行相关 Hooks
-// ============================================
-
-/** 获取银行列表 */
-export function useBanks(params?: BankListParams) {
-  return useQuery<PagedResult<BankWithNextTask>>({
-    queryKey: queryKeys.banks(params),
-    queryFn: () => banksApi.list(params),
-  })
-}
-
-/** 获取银行列表（含下一个任务） */
-export function useBanksWithNextTasks(params?: BankListParams) {
-  return useQuery<PagedResult<BankWithNextTask>>({
-    queryKey: queryKeys.banksWithTasks(params),
-    queryFn: () => banksApi.listWithNextTasks(params),
-    // 任务变化会影响下次执行信息，每次访问页面都重新获取
-    staleTime: 0,
-  })
-}
-
-/** 获取银行分组列表 */
-export function useBankGroups() {
-  return useQuery<{ groups: string[] }>({
-    queryKey: queryKeys.bankGroups,
-    queryFn: () => banksApi.getGroups(),
-  })
-}
-
-// ============================================
-// 任务相关 Hooks
-// ============================================
-
-/** 获取任务列表 */
-export function useTasks(params?: TaskListParams) {
-  return useQuery<PagedResult<Task>>({
-    queryKey: queryKeys.tasks(params),
-    queryFn: () => tasksApi.list(params),
-  })
-}
-
-/** 获取全部任务（用于仪表盘统计） */
-export function useAllTasks(params?: TaskListParams) {
-  return useQuery<Task[]>({
-    queryKey: queryKeys.allTasks(params),
-    queryFn: () => tasksApi.listAll(params),
-  })
-}
-
-/** 获取任务周期列表 */
-export function useTaskCycles() {
-  return useQuery<{ cycles: number[] }>({
-    queryKey: queryKeys.taskCycles,
-    queryFn: () => tasksApi.getCycles(),
-  })
-}
-
-// ============================================
-// 策略相关 Hooks
-// ============================================
-
-/** 获取策略列表 */
-export function useStrategies() {
-  return useQuery<Strategy[]>({
-    queryKey: queryKeys.strategies,
-    queryFn: () => strategiesApi.list(),
-  })
-}
-
-// ============================================
-// 通知相关 Hooks
-// ============================================
-
-/** 获取通知渠道列表 */
-export function useNotificationChannels() {
-  return useQuery<NotificationChannel[]>({
-    queryKey: queryKeys.notificationChannels,
-    queryFn: () => notificationsApi.listChannels(),
-  })
-}
-
-// ============================================
 // ============================================
 // Webhook 相关 Hooks
 // ============================================

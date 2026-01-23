@@ -1,0 +1,21 @@
+import { useQuery } from '@tanstack/react-query'
+import { notificationsApi } from './api'
+import type { NotificationChannel } from './types'
+import type { TodayTasksResponse } from '@/lib/types'
+import { queryKeys } from '@/hooks/use-queries'
+
+/** 获取通知渠道列表 */
+export function useNotificationChannels() {
+  return useQuery<NotificationChannel[]>({
+    queryKey: queryKeys.notificationChannels,
+    queryFn: () => notificationsApi.listChannels(),
+  })
+}
+
+/** 获取今日任务（通知） */
+export function useTodayTasks() {
+  return useQuery<TodayTasksResponse>({
+    queryKey: queryKeys.todayTasks,
+    queryFn: () => notificationsApi.getTodayTasks(),
+  })
+}

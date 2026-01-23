@@ -14,231 +14,43 @@ export interface PagedResult<T> {
   page_size: number
 }
 
-export interface BankListParams {
-  page?: number
-  page_size?: number
-  status?: string
-  group?: string
-  q?: string
-}
+export type {
+  Bank,
+  BankBatchDeleteRequest,
+  BankBatchUpdateGroupRequest,
+  BankListParams,
+  BankWithNextTask,
+  CreateBankRequest,
+  UpdateBankRequest,
+} from '@/domains/bank/types'
 
-export interface TaskListParams {
-  page?: number
-  page_size?: number
-  status?: string
-  cycle?: number
-  group?: string
-  q?: string
-}
+export type {
+  BatchDeleteRequest,
+  BatchPostponeRequest,
+  CompleteTaskRequest,
+  GenerateTasksRequest,
+  LastTaskInfo,
+  Task,
+  TaskListParams,
+  TaskStatus,
+} from '@/domains/task/types'
 
-/** ?????? */
-export interface Bank {
-  id: string
-  user_id: string
-  name: string
-  amount_min: number
-  amount_max: number
-  strategy_id?: string
-  group_name?: string
-  is_active: boolean
-  created_at: string
-  updated_at?: string
-  strategy?: Strategy
-}
+export type {
+  CreateStrategyRequest,
+  Strategy,
+  UpdateStrategyRequest,
+} from '@/domains/strategy/types'
 
-/** ???????????? - ????? */
-export interface BankWithNextTask extends Bank {
-  next_exec_date?: string
-  next_exec_time?: string
-  next_to_bank_id?: string
-  next_to_bank_name?: string
-  next_amount?: number
-  next_memo?: string
-}
-
-/** ?????? */
-export interface CreateBankRequest {
-  name: string
-  amount_min?: number
-  amount_max?: number
-  strategy_id?: string
-  group_name?: string
-  is_active?: boolean
-}
-
-/** ?????? */
-export interface UpdateBankRequest {
-  name?: string
-  amount_min?: number
-  amount_max?: number
-  strategy_id?: string
-  group_name?: string
-  is_active?: boolean
-}
-
-/** ???????? */
-export interface BankBatchDeleteRequest {
-  bank_ids?: string[]
-  delete_all?: boolean
-  delete_inactive?: boolean
-}
-
-/** ?????????? */
-export interface BankBatchUpdateGroupRequest {
-  bank_ids: string[]
-  group_name?: string | null
-}
+export type {
+  CreateChannelRequest,
+  NotificationChannel,
+  NotificationChannelType,
+  UpdateChannelRequest,
+} from '@/domains/notification/types'
 
 // ============================================
 // ??????
 // ============================================
-
-/** ???? */
-export type TaskStatus = 'pending' | 'completed' | 'skipped'
-
-/** ???? */
-export interface Task {
-  id: string
-  user_id: string
-  cycle: number
-  anchor_date: string
-  exec_date: string
-  exec_time?: string
-  from_bank_id: string
-  to_bank_id: string
-  amount: number
-  memo?: string
-  notes?: string
-  status: TaskStatus
-  completed_at?: string
-  created_at: string
-  from_bank?: Bank
-  to_bank?: Bank
-}
-
-/** ?????? */
-export interface CompleteTaskRequest {
-  notes?: string
-}
-
-/** ?????? */
-export interface GenerateTasksRequest {
-  strategy_id: string
-  group?: string
-  cycles?: number
-}
-
-/** ???????? */
-export interface BatchDeleteRequest {
-  task_ids?: string[]
-  delete_all?: boolean
-  delete_completed?: boolean
-  delete_cycle?: number
-}
-
-/** ???????? */
-export interface BatchPostponeRequest {
-  task_ids?: string[]
-  postpone_today?: boolean
-  days?: number
-}
-
-/** ?????? */
-export interface LastTaskInfo {
-  has_tasks: boolean
-  last_exec_date: string | null
-  last_cycle: number
-  suggested_start_date: string
-  suggested_cycle: number
-  interval_days: number
-}
-
-// ============================================
-// ??????
-// ============================================
-
-/** ???? */
-export interface Strategy {
-  id: string
-  user_id: string
-  name: string
-  // ????
-  interval_min: number
-  interval_max: number
-  time_start: string
-  time_end: string
-  skip_weekend: boolean
-  // ????
-  amount_min: number
-  amount_max: number
-  // ????
-  daily_limit: number
-  // ???
-  is_system: boolean
-  created_at: string
-  updated_at?: string
-}
-
-/** ?????? */
-export interface CreateStrategyRequest {
-  name: string
-  interval_min?: number
-  interval_max?: number
-  time_start?: string
-  time_end?: string
-  skip_weekend?: boolean
-  amount_min?: number
-  amount_max?: number
-  daily_limit?: number
-}
-
-/** ?????? */
-export interface UpdateStrategyRequest {
-  name?: string
-  interval_min?: number
-  interval_max?: number
-  time_start?: string
-  time_end?: string
-  skip_weekend?: boolean
-  amount_min?: number
-  amount_max?: number
-  daily_limit?: number
-}
-
-// ============================================
-// ??????
-// ============================================
-
-/** ?????? */
-export type NotificationChannelType = 'bark' | 'telegram' | 'webhook'
-
-/** ?????? */
-export interface NotificationChannel {
-  id: string
-  user_id: string
-  name: string
-  type: NotificationChannelType
-  config: Record<string, unknown>
-  is_enabled: boolean
-  created_at: string
-  updated_at?: string
-}
-
-/** ???????? */
-export interface CreateChannelRequest {
-  name: string
-  type: NotificationChannelType
-  config: Record<string, unknown>
-  is_enabled?: boolean
-}
-
-/** ???????? */
-export interface UpdateChannelRequest {
-  name?: string
-  type?: NotificationChannelType
-  config?: Record<string, unknown>
-  is_enabled?: boolean
-}
 
 // ============================================
 // ??????
