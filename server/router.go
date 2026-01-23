@@ -40,6 +40,7 @@ func (s *Server) SetupRoutes() {
 	// 银行 API
 	bankAPI := v1.NewBankAPI(s.store)
 	authGroup.GET("/banks", bankAPI.List)
+	authGroup.GET("/banks/groups", bankAPI.Groups)
 	authGroup.POST("/banks", bankAPI.Create)
 	authGroup.GET("/banks/:id", bankAPI.Get)
 	authGroup.PUT("/banks/:id", bankAPI.Update)
@@ -56,6 +57,7 @@ func (s *Server) SetupRoutes() {
 	// 任务 API
 	taskAPI := v1.NewTaskAPI(s.store)
 	authGroup.GET("/tasks", taskAPI.List)
+	authGroup.GET("/tasks/cycles", taskAPI.Cycles)
 	authGroup.POST("/tasks/generate", taskAPI.Generate)
 	authGroup.PUT("/tasks/:id/complete", taskAPI.Complete)
 	authGroup.DELETE("/tasks", taskAPI.DeleteAll)

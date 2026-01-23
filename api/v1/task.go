@@ -3,6 +3,8 @@ package v1
 import (
 	"errors"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/CoxxA/nomadbank/internal/tasks"
@@ -22,6 +24,20 @@ func NewTaskAPI(store *store.Store) *TaskAPI {
 	return &TaskAPI{store: store}
 }
 
+// Cycles 获取任务周期列表
+func (a *TaskAPI) Cycles(c echo.Context) error {
+	userID := middleware.GetUserID(c)
+
+	cycles, err := a.store.ListTaskCycles(userID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "获取周期列表失败")
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"cycles": cycles,
+	})
+}
+
 // GenerateTasksRequest 生成任务请求
 type GenerateTasksRequest struct {
 	StrategyID string `json:"strategy_id"` // 策略 ID
@@ -33,7 +49,37 @@ type GenerateTasksRequest struct {
 func (a *TaskAPI) List(c echo.Context) error {
 	userID := middleware.GetUserID(c)
 
-	tasks, err := a.store.ListTasksByUserID(userID)
+	page, pageSize, err := parsePageParams(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "分页参数错误")
+	}
+
+	status := strings.TrimSpace(c.QueryParam("status"))
+	group := strings.TrimSpace(c.QueryParam("group"))
+	query := strings.TrimSpace(c.QueryParam("q"))
+	cycleStr := strings.TrimSpace(c.QueryParam("cycle"))
+	var cycle *int
+	if cycleStr != "" {
+		parsed, err := strconv.Atoi(cycleStr)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "周期参数错误")
+		}
+		cycle = &parsed
+	}
+
+	filter := store.TaskListFilter{
+		Status: status,
+		Group:  group,
+		Cycle:  cycle,
+		Query:  query,
+	}
+
+	total, err := a.store.CountTasksByUserID(userID, filter)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "获取任务列表失败")
+	}
+
+	tasks, err := a.store.ListTasksByUserIDPaged(userID, filter, page, pageSize)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "获取任务列表失败")
 	}
@@ -43,7 +89,12 @@ func (a *TaskAPI) List(c echo.Context) error {
 		response[i] = toTaskResponse(&tasks[i])
 	}
 
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, PageResult[*TaskResponse]{
+		Items:    response,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	})
 }
 
 // Generate 生成任务

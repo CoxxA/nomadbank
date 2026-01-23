@@ -51,25 +51,58 @@ type UpdateBankRequest struct {
 	IsActive   bool    `json:"is_active"`
 }
 
+// Groups 获取银行分组列表
+func (a *BankAPI) Groups(c echo.Context) error {
+	userID := middleware.GetUserID(c)
+
+	groups, err := a.store.ListBankGroups(userID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "获取分组列表失败")
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"groups": groups,
+	})
+}
+
 // List 获取银行列表（包含下次任务信息）
 func (a *BankAPI) List(c echo.Context) error {
 	userID := middleware.GetUserID(c)
 
-	banks, err := a.store.ListBanksByUserID(userID)
+	page, pageSize, err := parsePageParams(c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "分页参数错误")
+	}
+
+	status := strings.TrimSpace(c.QueryParam("status"))
+	group := strings.TrimSpace(c.QueryParam("group"))
+	query := strings.TrimSpace(c.QueryParam("q"))
+
+	filter := store.BankListFilter{
+		Status: status,
+		Group:  group,
+		Query:  query,
+	}
+
+	total, err := a.store.CountBanksByUserID(userID, filter)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "获取银行列表失败")
 	}
 
-	// 获取所有待执行任务
-	tasks, err := a.store.ListPendingTasksByUserID(userID)
+	banks, err := a.store.ListBanksByUserIDPaged(userID, filter, page, pageSize)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "获取任务列表失败")
+		return echo.NewHTTPError(http.StatusInternalServerError, "获取银行列表失败")
 	}
 
-	// 构建银行ID到名称的映射
-	bankNameMap := make(map[string]string)
-	for _, bank := range banks {
-		bankNameMap[bank.ID] = bank.Name
+	bankIDs := make([]string, 0, len(banks))
+	for i := range banks {
+		bankIDs = append(bankIDs, banks[i].ID)
+	}
+
+	// 获取当前页银行的待执行任务
+	tasks, err := a.store.ListPendingTasksByFromBankIDs(userID, bankIDs)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "获取任务列表失败")
 	}
 
 	// 构建银行ID到下次任务的映射（从待执行任务中找第一个作为转出方的任务）
@@ -94,7 +127,10 @@ func (a *BankAPI) List(c echo.Context) error {
 		if task, exists := nextTaskMap[bank.ID]; exists {
 			execDate := task.ExecDate.Format("2006-01-02")
 			execTime := task.ExecDate.Format("15:04")
-			toBankName := bankNameMap[task.ToBankID]
+			toBankName := ""
+			if task.ToBank != nil {
+				toBankName = task.ToBank.Name
+			}
 			response.NextExecDate = &execDate
 			response.NextExecTime = &execTime
 			response.NextToBankID = &task.ToBankID
@@ -105,7 +141,12 @@ func (a *BankAPI) List(c echo.Context) error {
 		result = append(result, response)
 	}
 
-	return c.JSON(http.StatusOK, result)
+	return c.JSON(http.StatusOK, PageResult[BankWithNextTaskResponse]{
+		Items:    result,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	})
 }
 
 // Create 创建银行

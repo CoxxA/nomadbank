@@ -12,6 +12,19 @@ type Store struct {
 	db *gorm.DB
 }
 
+type BankListFilter struct {
+	Status string
+	Group  string
+	Query  string
+}
+
+type TaskListFilter struct {
+	Status string
+	Group  string
+	Cycle  *int
+	Query  string
+}
+
 // New 创建 Store 实例
 func New(db *gorm.DB) *Store {
 	return &Store{db: db}
@@ -132,6 +145,64 @@ func (s *Store) ListActiveBanksByGroup(userID string, groupName string) ([]model
 	return banks, nil
 }
 
+func (s *Store) ListBanksByUserIDPaged(
+	userID string,
+	filter BankListFilter,
+	page int,
+	pageSize int,
+) ([]model.Bank, error) {
+	var banks []model.Bank
+	offset := (page - 1) * pageSize
+	query := s.applyBankFilters(s.db.Preload("Strategy").Model(&model.Bank{}), userID, filter)
+	if err := query.Order("created_at ASC, id ASC").Offset(offset).Limit(pageSize).Find(&banks).Error; err != nil {
+		return nil, err
+	}
+	return banks, nil
+}
+
+func (s *Store) CountBanksByUserID(userID string, filter BankListFilter) (int64, error) {
+	var count int64
+	query := s.applyBankFilters(s.db.Model(&model.Bank{}), userID, filter)
+	if err := query.Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (s *Store) ListBankGroups(userID string) ([]string, error) {
+	var groups []string
+	if err := s.db.Model(&model.Bank{}).
+		Where("user_id = ? AND group_name IS NOT NULL AND group_name != ''", userID).
+		Distinct().
+		Order("group_name ASC").
+		Pluck("group_name", &groups).Error; err != nil {
+		return nil, err
+	}
+	return groups, nil
+}
+
+func (s *Store) applyBankFilters(query *gorm.DB, userID string, filter BankListFilter) *gorm.DB {
+	query = query.Where("user_id = ?", userID)
+	switch filter.Status {
+	case "active":
+		query = query.Where("is_active = ?", true)
+	case "inactive":
+		query = query.Where("is_active = ?", false)
+	}
+	if filter.Group != "" && filter.Group != "all" {
+		if filter.Group == "ungrouped" {
+			query = query.Where("group_name IS NULL OR group_name = ''")
+		} else {
+			query = query.Where("group_name = ?", filter.Group)
+		}
+	}
+	if filter.Query != "" {
+		like := "%" + filter.Query + "%"
+		query = query.Where("name LIKE ? OR group_name LIKE ?", like, like)
+	}
+	return query
+}
+
 // ========== Strategy 操作 ==========
 
 // CreateStrategy 创建策略
@@ -203,6 +274,56 @@ func (s *Store) ListTasksByUserID(userID string) ([]model.TransferTask, error) {
 	return tasks, nil
 }
 
+func (s *Store) ListTasksByUserIDPaged(
+	userID string,
+	filter TaskListFilter,
+	page int,
+	pageSize int,
+) ([]model.TransferTask, error) {
+	var tasks []model.TransferTask
+	offset := (page - 1) * pageSize
+	query := s.applyTaskFilters(s.db.Preload("FromBank").Preload("ToBank").Model(&model.TransferTask{}), userID, filter)
+	if err := query.Order("exec_date ASC, id ASC").Offset(offset).Limit(pageSize).Find(&tasks).Error; err != nil {
+		return nil, err
+	}
+	return tasks, nil
+}
+
+func (s *Store) CountTasksByUserID(userID string, filter TaskListFilter) (int64, error) {
+	var count int64
+	query := s.applyTaskFilters(s.db.Model(&model.TransferTask{}), userID, filter)
+	if err := query.Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func (s *Store) ListTaskCycles(userID string) ([]int, error) {
+	var cycles []int
+	if err := s.db.Model(&model.TransferTask{}).
+		Where("user_id = ?", userID).
+		Distinct().
+		Order("cycle ASC").
+		Pluck("cycle", &cycles).Error; err != nil {
+		return nil, err
+	}
+	return cycles, nil
+}
+
+func (s *Store) ListPendingTasksByFromBankIDs(userID string, bankIDs []string) ([]model.TransferTask, error) {
+	var tasks []model.TransferTask
+	if len(bankIDs) == 0 {
+		return tasks, nil
+	}
+	if err := s.db.Preload("ToBank").
+		Where("user_id = ? AND status = ? AND from_bank_id IN ?", userID, model.TaskStatusPending, bankIDs).
+		Order("exec_date ASC, id ASC").
+		Find(&tasks).Error; err != nil {
+		return nil, err
+	}
+	return tasks, nil
+}
+
 // ListPendingTasksByUserID 获取用户的待执行任务
 func (s *Store) ListPendingTasksByUserID(userID string) ([]model.TransferTask, error) {
 	var tasks []model.TransferTask
@@ -224,6 +345,30 @@ func (s *Store) ListCompletedTasksByUserID(userID string) ([]model.TransferTask,
 		return nil, err
 	}
 	return tasks, nil
+}
+
+func (s *Store) applyTaskFilters(query *gorm.DB, userID string, filter TaskListFilter) *gorm.DB {
+	query = query.Where("transfer_tasks.user_id = ?", userID)
+	if filter.Status != "" && filter.Status != "all" {
+		query = query.Where("transfer_tasks.status = ?", filter.Status)
+	}
+	if filter.Cycle != nil {
+		query = query.Where("transfer_tasks.cycle = ?", *filter.Cycle)
+	}
+	if filter.Group != "" && filter.Group != "all" {
+		if filter.Group == "ungrouped" {
+			query = query.Where("transfer_tasks.group_name = ''")
+		} else {
+			query = query.Where("transfer_tasks.group_name = ?", filter.Group)
+		}
+	}
+	if filter.Query != "" {
+		like := "%" + filter.Query + "%"
+		query = query.Joins("LEFT JOIN banks fb ON fb.id = transfer_tasks.from_bank_id").
+			Joins("LEFT JOIN banks tb ON tb.id = transfer_tasks.to_bank_id").
+			Where("fb.name LIKE ? OR tb.name LIKE ? OR transfer_tasks.group_name LIKE ?", like, like, like)
+	}
+	return query
 }
 
 // UpdateTask 更新任务
