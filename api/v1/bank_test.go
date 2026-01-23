@@ -55,17 +55,20 @@ func TestBankListDoesNotExposeTagsOrLastExec(t *testing.T) {
 		t.Fatalf("status: %d", rec.Code)
 	}
 
-	var payload []map[string]any
+	var payload PageResult[map[string]any]
 	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
-	if len(payload) != 1 {
-		t.Fatalf("unexpected count: %d", len(payload))
+	if payload.Page != 1 || payload.PageSize == 0 {
+		t.Fatalf("unexpected paging: %+v", payload)
 	}
-	if _, ok := payload[0]["tags"]; ok {
+	if payload.Total != 1 || len(payload.Items) != 1 {
+		t.Fatalf("unexpected items: %d", len(payload.Items))
+	}
+	if _, ok := payload.Items[0]["tags"]; ok {
 		t.Fatalf("tags should be absent")
 	}
-	if _, ok := payload[0]["last_exec_date"]; ok {
+	if _, ok := payload.Items[0]["last_exec_date"]; ok {
 		t.Fatalf("last_exec_date should be absent")
 	}
 }
