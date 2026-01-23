@@ -62,14 +62,12 @@ import {
 } from '@/components/ui/table'
 import { PageHeader } from '@/components/page/page-header'
 import { Main } from '@/components/layout/main'
-import {
-  useBankGroups,
-  useBanksWithNextTasks,
-  useRefreshQueries,
-} from '@/hooks/use-queries'
-import { banksApi, importExportApi } from '@/lib/api'
+import { useBankGroups, useBanksWithNextTasks } from '@/domains/bank/hooks'
+import { banksApi } from '@/domains/bank/api'
+import { useRefreshQueries } from '@/hooks/use-queries'
+import { importExportApi } from '@/lib/api'
 import { parseDateKey } from '@/lib/utils'
-import type { BankWithNextTask, CreateBankRequest } from '@/lib/types'
+import type { BankWithNextTask, CreateBankRequest } from '@/domains/bank/types'
 
 export function Accounts() {
   const { refreshBanks } = useRefreshQueries()

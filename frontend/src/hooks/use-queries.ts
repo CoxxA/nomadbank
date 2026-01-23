@@ -4,7 +4,6 @@
  */
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  banksApi,
   notificationsApi,
   statsApi,
   strategiesApi,
@@ -12,8 +11,6 @@ import {
   webhooksApi,
 } from '@/lib/api'
 import type {
-  BankListParams,
-  BankWithNextTask,
   CalendarDay,
   DashboardStats,
   NextDayTasks,
@@ -26,6 +23,7 @@ import type {
   TodayTasksResponse,
   Webhook,
 } from '@/lib/types'
+import type { BankListParams } from '@/domains/bank/types'
 
 // ============================================
 // Query Keys
@@ -127,36 +125,6 @@ export function useTodayTasks() {
   return useQuery<TodayTasksResponse>({
     queryKey: queryKeys.todayTasks,
     queryFn: () => notificationsApi.getTodayTasks(),
-  })
-}
-
-// ============================================
-// 银行相关 Hooks
-// ============================================
-
-/** 获取银行列表 */
-export function useBanks(params?: BankListParams) {
-  return useQuery<PagedResult<BankWithNextTask>>({
-    queryKey: queryKeys.banks(params),
-    queryFn: () => banksApi.list(params),
-  })
-}
-
-/** 获取银行列表（含下一个任务） */
-export function useBanksWithNextTasks(params?: BankListParams) {
-  return useQuery<PagedResult<BankWithNextTask>>({
-    queryKey: queryKeys.banksWithTasks(params),
-    queryFn: () => banksApi.listWithNextTasks(params),
-    // 任务变化会影响下次执行信息，每次访问页面都重新获取
-    staleTime: 0,
-  })
-}
-
-/** 获取银行分组列表 */
-export function useBankGroups() {
-  return useQuery<{ groups: string[] }>({
-    queryKey: queryKeys.bankGroups,
-    queryFn: () => banksApi.getGroups(),
   })
 }
 

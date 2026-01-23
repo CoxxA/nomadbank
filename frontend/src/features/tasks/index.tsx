@@ -72,8 +72,8 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { PageHeader } from '@/components/page/page-header'
 import { Main } from '@/components/layout/main'
+import { useBankGroups } from '@/domains/bank/hooks'
 import {
-  useBankGroups,
   useRefreshQueries,
   useStrategies,
   useTaskCycles,
