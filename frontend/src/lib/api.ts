@@ -5,23 +5,16 @@
 import type {
   CalendarDay,
   ChangePasswordRequest,
-  CreateChannelRequest,
-  CreateStrategyRequest,
   CreateUserRequest,
   CreateWebhookRequest,
   DashboardStats,
   ImportResult,
   NextDayTasks,
-  NotificationChannel,
   RecentActivity,
   ResetPasswordRequest,
-  Strategy,
   SystemStatus,
   Task,
-  TodayTasksResponse,
-  UpdateChannelRequest,
   UpdateProfileRequest,
-  UpdateStrategyRequest,
   UpdateUserRequest,
   UpdateWebhookRequest,
   User,
@@ -39,56 +32,6 @@ export { ApiError, api, toParams } from './api-client'
 // ============================================
 // 基础 API 方法
 // ============================================
-
-/** 策略 API */
-export const strategiesApi = {
-  list: () => api.get<Strategy[]>('/api/v1/strategies'),
-  get: (id: string) => api.get<Strategy>(`/api/v1/strategies/${id}`),
-  create: (data: CreateStrategyRequest) =>
-    api.post<Strategy>('/api/v1/strategies', data),
-  update: (id: string, data: UpdateStrategyRequest) =>
-    api.put<Strategy>(`/api/v1/strategies/${id}`, data),
-  delete: (id: string) => api.delete(`/api/v1/strategies/${id}`),
-}
-
-/** 通知 API */
-export const notificationsApi = {
-  listChannels: () => api.get<NotificationChannel[]>('/api/v1/notifications'),
-  list: () => api.get<NotificationChannel[]>('/api/v1/notifications'),
-  createChannel: (data: CreateChannelRequest) =>
-    api.post<NotificationChannel>('/api/v1/notifications', data),
-  create: (data: CreateChannelRequest) =>
-    api.post<NotificationChannel>('/api/v1/notifications', data),
-  updateChannel: (id: string, data: UpdateChannelRequest) =>
-    api.put<NotificationChannel>(`/api/v1/notifications/${id}`, data),
-  update: (id: string, data: UpdateChannelRequest) =>
-    api.put<NotificationChannel>(`/api/v1/notifications/${id}`, data),
-  deleteChannel: (id: string) => api.delete(`/api/v1/notifications/${id}`),
-  delete: (id: string) => api.delete(`/api/v1/notifications/${id}`),
-  test: (channelId: string, message?: string) =>
-    api.post(`/api/v1/notifications/${channelId}/test`, { message }),
-  sendDailyReminder: async () => {
-    return { message: '提醒功能暂不支持', tasks_count: 0, notified: false }
-  },
-  getTodayTasks: async (): Promise<TodayTasksResponse> => {
-    const tasks = await tasksApi.listAll()
-    const today = new Date().toISOString().split('T')[0]
-    const todayTasks = tasks.filter((t) => getDateKey(t.exec_date) === today)
-    return {
-      date: today,
-      tasks: todayTasks.map((t) => ({
-        id: t.id,
-        exec_time: t.exec_time,
-        from_bank_name: t.from_bank?.name || '',
-        to_bank_name: t.to_bank?.name || '',
-        amount: t.amount,
-        status: t.status,
-      })),
-      pending_count: todayTasks.filter((t) => t.status === 'pending').length,
-      completed_count: todayTasks.filter((t) => t.status === 'completed').length,
-    }
-  },
-}
 
 /** 统计 API */
 export const statsApi = {

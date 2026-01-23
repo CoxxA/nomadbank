@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { SettingsMembers } from '@/features/settings/members'
+import { SettingsMembers } from '@/domains/settings/members'
 import { useAuthStore } from '@/stores/auth-store'
 
 export const Route = createFileRoute('/_authenticated/settings/members')({

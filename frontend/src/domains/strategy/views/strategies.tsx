@@ -31,9 +31,10 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { PageHeader } from '@/components/page/page-header'
 import { Main } from '@/components/layout/main'
-import { useRefreshQueries, useStrategies } from '@/hooks/use-queries'
-import { strategiesApi } from '@/lib/api'
-import type { CreateStrategyRequest, Strategy } from '@/lib/types'
+import { useStrategies } from '@/domains/strategy/hooks'
+import { strategiesApi } from '@/domains/strategy/api'
+import { useRefreshQueries } from '@/hooks/use-queries'
+import type { CreateStrategyRequest, Strategy } from '@/domains/strategy/types'
 
 export function Strategies() {
   const { refreshStrategies } = useRefreshQueries()

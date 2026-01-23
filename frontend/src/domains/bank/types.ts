@@ -1,4 +1,4 @@
-import type { Strategy } from '@/lib/types'
+import type { Strategy } from '@/domains/strategy/types'
 
 export interface BankListParams {
   page?: number

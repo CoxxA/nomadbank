@@ -3,15 +3,12 @@
  * 适配 Go 后端 API
  */
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { notificationsApi, statsApi, strategiesApi, webhooksApi } from '@/lib/api'
+import { statsApi, webhooksApi } from '@/lib/api'
 import type {
   CalendarDay,
   DashboardStats,
   NextDayTasks,
-  NotificationChannel,
   RecentActivity,
-  Strategy,
-  TodayTasksResponse,
   Webhook,
 } from '@/lib/types'
 import type { BankListParams } from '@/domains/bank/types'
@@ -112,39 +109,6 @@ export function useCalendarData(startDate: string, endDate: string) {
   })
 }
 
-/** 获取今日任务 */
-export function useTodayTasks() {
-  return useQuery<TodayTasksResponse>({
-    queryKey: queryKeys.todayTasks,
-    queryFn: () => notificationsApi.getTodayTasks(),
-  })
-}
-
-// ============================================
-// 策略相关 Hooks
-// ============================================
-
-/** 获取策略列表 */
-export function useStrategies() {
-  return useQuery<Strategy[]>({
-    queryKey: queryKeys.strategies,
-    queryFn: () => strategiesApi.list(),
-  })
-}
-
-// ============================================
-// 通知相关 Hooks
-// ============================================
-
-/** 获取通知渠道列表 */
-export function useNotificationChannels() {
-  return useQuery<NotificationChannel[]>({
-    queryKey: queryKeys.notificationChannels,
-    queryFn: () => notificationsApi.listChannels(),
-  })
-}
-
-// ============================================
 // ============================================
 // Webhook 相关 Hooks
 // ============================================

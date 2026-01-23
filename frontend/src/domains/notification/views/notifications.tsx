@@ -48,19 +48,16 @@ import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PageHeader } from '@/components/page/page-header'
 import { Main } from '@/components/layout/main'
-import {
-  useNotificationChannels,
-  useRefreshQueries,
-  useWebhooks,
-} from '@/hooks/use-queries'
-import { notificationsApi, webhooksApi } from '@/lib/api'
+import { useNotificationChannels } from '@/domains/notification/hooks'
+import { notificationsApi } from '@/domains/notification/api'
+import { useRefreshQueries, useWebhooks } from '@/hooks/use-queries'
+import { webhooksApi } from '@/lib/api'
 import { parseDateKey } from '@/lib/utils'
+import type { CreateWebhookRequest, Webhook } from '@/lib/types'
 import type {
   CreateChannelRequest,
-  CreateWebhookRequest,
   NotificationChannel,
-  Webhook,
-} from '@/lib/types'
+} from '@/domains/notification/types'
 
 // 支持的 webhook 事件类型
 const WEBHOOK_EVENTS = [

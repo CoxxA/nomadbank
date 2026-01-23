@@ -35,96 +35,22 @@ export type {
   TaskStatus,
 } from '@/domains/task/types'
 
-// ============================================
-// ??????
-// ============================================
+export type {
+  CreateStrategyRequest,
+  Strategy,
+  UpdateStrategyRequest,
+} from '@/domains/strategy/types'
+
+export type {
+  CreateChannelRequest,
+  NotificationChannel,
+  NotificationChannelType,
+  UpdateChannelRequest,
+} from '@/domains/notification/types'
 
 // ============================================
 // ??????
 // ============================================
-
-/** ???? */
-export interface Strategy {
-  id: string
-  user_id: string
-  name: string
-  // ????
-  interval_min: number
-  interval_max: number
-  time_start: string
-  time_end: string
-  skip_weekend: boolean
-  // ????
-  amount_min: number
-  amount_max: number
-  // ????
-  daily_limit: number
-  // ???
-  is_system: boolean
-  created_at: string
-  updated_at?: string
-}
-
-/** ?????? */
-export interface CreateStrategyRequest {
-  name: string
-  interval_min?: number
-  interval_max?: number
-  time_start?: string
-  time_end?: string
-  skip_weekend?: boolean
-  amount_min?: number
-  amount_max?: number
-  daily_limit?: number
-}
-
-/** ?????? */
-export interface UpdateStrategyRequest {
-  name?: string
-  interval_min?: number
-  interval_max?: number
-  time_start?: string
-  time_end?: string
-  skip_weekend?: boolean
-  amount_min?: number
-  amount_max?: number
-  daily_limit?: number
-}
-
-// ============================================
-// ??????
-// ============================================
-
-/** ?????? */
-export type NotificationChannelType = 'bark' | 'telegram' | 'webhook'
-
-/** ?????? */
-export interface NotificationChannel {
-  id: string
-  user_id: string
-  name: string
-  type: NotificationChannelType
-  config: Record<string, unknown>
-  is_enabled: boolean
-  created_at: string
-  updated_at?: string
-}
-
-/** ???????? */
-export interface CreateChannelRequest {
-  name: string
-  type: NotificationChannelType
-  config: Record<string, unknown>
-  is_enabled?: boolean
-}
-
-/** ???????? */
-export interface UpdateChannelRequest {
-  name?: string
-  type?: NotificationChannelType
-  config?: Record<string, unknown>
-  is_enabled?: boolean
-}
 
 // ============================================
 // ??????

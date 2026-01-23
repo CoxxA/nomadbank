@@ -37,11 +37,11 @@ import {
   useNextDayTasks,
   useRecentActivities,
   useRefreshQueries,
-  useTodayTasks,
 } from '@/hooks/use-queries'
 import { useAllTasks } from '@/domains/task/hooks'
 import { tasksApi } from '@/domains/task/api'
-import { notificationsApi } from '@/lib/api'
+import { useTodayTasks } from '@/domains/notification/hooks'
+import { notificationsApi } from '@/domains/notification/api'
 import { cn, parseDateKey } from '@/lib/utils'
 
 const RANGE_LABELS = {
