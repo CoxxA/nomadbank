@@ -34,13 +34,14 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   useCalendarData,
   useDashboardStats,
-  useAllTasks,
   useNextDayTasks,
   useRecentActivities,
   useRefreshQueries,
   useTodayTasks,
 } from '@/hooks/use-queries'
-import { notificationsApi, tasksApi } from '@/lib/api'
+import { useAllTasks } from '@/domains/task/hooks'
+import { tasksApi } from '@/domains/task/api'
+import { notificationsApi } from '@/lib/api'
 import { cn, parseDateKey } from '@/lib/utils'
 
 const RANGE_LABELS = {

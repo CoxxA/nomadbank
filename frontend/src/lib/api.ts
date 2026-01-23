@@ -3,28 +3,21 @@
  * 用于与 Go 后端通信
  */
 import type {
-  BatchDeleteRequest,
-  BatchPostponeRequest,
   CalendarDay,
   ChangePasswordRequest,
-  CompleteTaskRequest,
   CreateChannelRequest,
   CreateStrategyRequest,
   CreateUserRequest,
   CreateWebhookRequest,
   DashboardStats,
-  GenerateTasksRequest,
   ImportResult,
-  LastTaskInfo,
   NextDayTasks,
   NotificationChannel,
-  PagedResult,
   RecentActivity,
   ResetPasswordRequest,
   Strategy,
   SystemStatus,
   Task,
-  TaskListParams,
   TodayTasksResponse,
   UpdateChannelRequest,
   UpdateProfileRequest,
@@ -35,275 +28,17 @@ import type {
   Webhook,
   WebhookLog,
 } from './types'
+import { tasksApi } from '@/domains/task/api'
+import { ApiError, api } from './api-client'
 import { getDateKey, parseDateKey } from './utils'
 
 // 重新导出所有类型
 export * from './types'
-
-// ============================================
-// 配置常量
-// ============================================
-
-// 生产模式使用同源，开发模式使用环境变量或代理
-const API_BASE_URL = import.meta.env.VITE_API_URL || ''
-const DEFAULT_TIMEOUT = 30000
-const MAX_PAGE_SIZE = 100
-const ACCESS_TOKEN_KEY = 'nomad-bank-access-token'
-
-// ============================================
-// 错误处理
-// ============================================
-
-/** API 错误类 */
-export class ApiError extends Error {
-  status: number
-
-  constructor(message: string, status: number) {
-    super(message)
-    this.name = 'ApiError'
-    this.status = status
-  }
-}
-
-// ============================================
-// 认证
-// ============================================
-
-/**
- * 从 cookie 获取 token
- */
-function getTokenFromCookie(): string | null {
-  const cookies = document.cookie.split(';')
-  for (const cookie of cookies) {
-    const [name, value] = cookie.trim().split('=')
-    if (name === ACCESS_TOKEN_KEY) {
-      try {
-        return JSON.parse(decodeURIComponent(value))
-      } catch {
-        return decodeURIComponent(value)
-      }
-    }
-  }
-  return null
-}
-
-/**
- * 获取认证头
- */
-async function getAuthHeaders(): Promise<Record<string, string>> {
-  const token = getTokenFromCookie()
-  if (token) {
-    return { Authorization: `Bearer ${token}` }
-  }
-  return {}
-}
-
-// ============================================
-// 请求封装
-// ============================================
-
-interface FetchOptions extends RequestInit {
-  params?: Record<string, string>
-  timeout?: number
-}
-
-export function toParams<T extends object>(
-  params?: T
-): Record<string, string> | undefined {
-  if (!params) return undefined
-  const result: Record<string, string> = {}
-  for (const [key, value] of Object.entries(params as Record<string, unknown>)) {
-    if (value === undefined || value === null || value === '') continue
-    result[key] = String(value)
-  }
-  return result
-}
-
-/**
- * 带超时的 fetch 包装
- */
-async function fetchWithTimeout(
-  url: string,
-  options: RequestInit,
-  timeout: number = DEFAULT_TIMEOUT
-): Promise<Response> {
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), timeout)
-
-  try {
-    return await fetch(url, { ...options, signal: controller.signal })
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new ApiError('请求超时，请稍后重试', 408)
-    }
-    throw error
-  } finally {
-    clearTimeout(timeoutId)
-  }
-}
-
-/**
- * 通用 API 请求函数
- */
-async function request<T>(
-  endpoint: string,
-  options: FetchOptions = {}
-): Promise<T> {
-  const { params, timeout, ...fetchOptions } = options
-
-  // 构建 URL
-  let url = `${API_BASE_URL}${endpoint}`
-  if (params) {
-    url += `?${new URLSearchParams(params).toString()}`
-  }
-
-  // 发送请求
-  const response = await fetchWithTimeout(
-    url,
-    {
-      ...fetchOptions,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(await getAuthHeaders()),
-        ...fetchOptions.headers,
-      },
-    },
-    timeout
-  )
-
-  // 处理错误响应
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    throw new ApiError(errorData.message || '请求失败', response.status)
-  }
-
-  // 204 No Content
-  if (response.status === 204) {
-    return {} as T
-  }
-
-  return response.json()
-}
+export { ApiError, api, toParams } from './api-client'
 
 // ============================================
 // 基础 API 方法
 // ============================================
-
-export const api = {
-  get: <T>(endpoint: string, params?: Record<string, string>) =>
-    request<T>(endpoint, { method: 'GET', params }),
-
-  post: <T>(endpoint: string, data?: unknown) =>
-    request<T>(endpoint, {
-      method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
-    }),
-
-  put: <T>(endpoint: string, data?: unknown) =>
-    request<T>(endpoint, {
-      method: 'PUT',
-      body: data !== undefined ? JSON.stringify(data) : undefined,
-    }),
-
-  delete: <T>(endpoint: string) => request<T>(endpoint, { method: 'DELETE' }),
-}
-
-// ============================================
-// 业务 API 接口（适配 Go 后端 /api/v1）
-// ============================================
-
-/** 任务 API */
-export const tasksApi = {
-  list: (params?: TaskListParams) =>
-    api.get<PagedResult<Task>>('/api/v1/tasks', toParams(params)),
-  listAll: async (params?: TaskListParams): Promise<Task[]> => {
-    let page = 1
-    const items: Task[] = []
-    while (true) {
-      const pageData = await api.get<PagedResult<Task>>(
-        '/api/v1/tasks',
-        toParams({
-          ...params,
-          page,
-          page_size: MAX_PAGE_SIZE,
-        })
-      )
-      items.push(...pageData.items)
-      if (items.length >= pageData.total || pageData.items.length < MAX_PAGE_SIZE) {
-        break
-      }
-      page += 1
-    }
-    return items
-  },
-  generate: (data: GenerateTasksRequest) =>
-    api.post<{ message: string; count: number }>(
-      '/api/v1/tasks/generate',
-      data
-    ),
-  complete: (id: string, _data?: CompleteTaskRequest) =>
-    api.put<Task>(`/api/v1/tasks/${id}/complete`),
-  skip: (id: string) => api.put<Task>(`/api/v1/tasks/${id}/complete`),
-  delete: (id: string) => api.delete(`/api/v1/tasks/${id}`),
-  deleteAll: () => api.delete('/api/v1/tasks'),
-  batchDelete: async (data: BatchDeleteRequest) => {
-    if (data.delete_all) {
-      await api.delete('/api/v1/tasks')
-    } else if (data.task_ids) {
-      for (const id of data.task_ids) {
-        await api.delete(`/api/v1/tasks/${id}`)
-      }
-    }
-    return { message: '删除成功', deleted_count: data.task_ids?.length || 0 }
-  },
-  batchCompleteToday: async () => {
-    const tasks = await tasksApi.listAll()
-    const today = new Date().toISOString().split('T')[0]
-    let count = 0
-    for (const task of tasks) {
-      if (getDateKey(task.exec_date) === today && task.status === 'pending') {
-        await api.put(`/api/v1/tasks/${task.id}/complete`)
-        count++
-      }
-    }
-    return { message: '完成成功', completed_count: count }
-  },
-  batchPostpone: async (_data: BatchPostponeRequest) => {
-    // Go 后端暂不支持，返回空结果
-    return { message: '暂不支持', postponed_count: 0 }
-  },
-  getCycles: () => api.get<{ cycles: number[] }>('/api/v1/tasks/cycles'),
-  getLastInfo: async (
-    _strategyId?: string,
-    _group?: string
-  ): Promise<LastTaskInfo> => {
-    const tasks = await tasksApi.listAll()
-    if (tasks.length === 0) {
-      return {
-        has_tasks: false,
-        last_exec_date: null,
-        last_cycle: 0,
-        suggested_start_date: new Date().toISOString().split('T')[0],
-        suggested_cycle: 1,
-        interval_days: 7,
-      }
-    }
-    const sorted = tasks.sort(
-      (a, b) =>
-        parseDateKey(b.exec_date).getTime() -
-        parseDateKey(a.exec_date).getTime()
-    )
-    const last = sorted[0]
-    return {
-      has_tasks: true,
-      last_exec_date: last.exec_date,
-      last_cycle: last.cycle,
-      suggested_start_date: last.exec_date,
-      suggested_cycle: last.cycle + 1,
-      interval_days: 7,
-    }
-  },
-}
 
 /** 策略 API */
 export const strategiesApi = {

@@ -3,27 +3,19 @@
  * 适配 Go 后端 API
  */
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  notificationsApi,
-  statsApi,
-  strategiesApi,
-  tasksApi,
-  webhooksApi,
-} from '@/lib/api'
+import { notificationsApi, statsApi, strategiesApi, webhooksApi } from '@/lib/api'
 import type {
   CalendarDay,
   DashboardStats,
   NextDayTasks,
   NotificationChannel,
-  PagedResult,
   RecentActivity,
   Strategy,
-  Task,
-  TaskListParams,
   TodayTasksResponse,
   Webhook,
 } from '@/lib/types'
 import type { BankListParams } from '@/domains/bank/types'
+import type { TaskListParams } from '@/domains/task/types'
 
 // ============================================
 // Query Keys
@@ -125,34 +117,6 @@ export function useTodayTasks() {
   return useQuery<TodayTasksResponse>({
     queryKey: queryKeys.todayTasks,
     queryFn: () => notificationsApi.getTodayTasks(),
-  })
-}
-
-// ============================================
-// 任务相关 Hooks
-// ============================================
-
-/** 获取任务列表 */
-export function useTasks(params?: TaskListParams) {
-  return useQuery<PagedResult<Task>>({
-    queryKey: queryKeys.tasks(params),
-    queryFn: () => tasksApi.list(params),
-  })
-}
-
-/** 获取全部任务（用于仪表盘统计） */
-export function useAllTasks(params?: TaskListParams) {
-  return useQuery<Task[]>({
-    queryKey: queryKeys.allTasks(params),
-    queryFn: () => tasksApi.listAll(params),
-  })
-}
-
-/** 获取任务周期列表 */
-export function useTaskCycles() {
-  return useQuery<{ cycles: number[] }>({
-    queryKey: queryKeys.taskCycles,
-    queryFn: () => tasksApi.getCycles(),
   })
 }
 

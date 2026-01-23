@@ -73,15 +73,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { PageHeader } from '@/components/page/page-header'
 import { Main } from '@/components/layout/main'
 import { useBankGroups } from '@/domains/bank/hooks'
-import {
-  useRefreshQueries,
-  useStrategies,
-  useTaskCycles,
-  useTasks,
-} from '@/hooks/use-queries'
-import { tasksApi } from '@/lib/api'
+import { useTaskCycles, useTasks } from '@/domains/task/hooks'
+import { tasksApi } from '@/domains/task/api'
+import { useRefreshQueries, useStrategies } from '@/hooks/use-queries'
 import { parseDateKey } from '@/lib/utils'
-import type { CompleteTaskRequest, Task } from '@/lib/types'
+import type { CompleteTaskRequest, Task } from '@/domains/task/types'
 
 export function Tasks() {
   const { refreshTasks } = useRefreshQueries()
