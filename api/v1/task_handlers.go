@@ -38,13 +38,6 @@ func (a *TaskAPI) Cycles(c echo.Context) error {
 	})
 }
 
-// GenerateTasksRequest 生成任务请求
-type GenerateTasksRequest struct {
-	StrategyID string `json:"strategy_id"` // 策略 ID
-	Group      string `json:"group"`       // 银行分组（空=全部）
-	Cycles     int    `json:"cycles"`      // 周期数
-}
-
 // List 获取任务列表
 func (a *TaskAPI) List(c echo.Context) error {
 	userID := middleware.GetUserID(c)
