@@ -1,4 +1,4 @@
-.PHONY: build run dev clean docker frontend
+.PHONY: build run dev clean docker frontend docs test-all
 
 # 版本信息
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
@@ -49,6 +49,18 @@ deps:
 	go mod download
 	go mod tidy
 
-# 运行测试
+# 运行后端测试
 test:
 	go test -v ./...
+
+# 运行所有测试（后端 + 前端）
+test-all: test
+	cd frontend && npm run test -- --run
+
+# 查看 API 文档（使用 Swagger UI）
+docs:
+	@echo "API 文档位置: docs/api/openapi.yaml"
+	@echo "在线查看: https://editor.swagger.io/ (导入 openapi.yaml)"
+	@echo "或使用 Docker:"
+	@echo "  docker run -p 8081:8080 -e SWAGGER_JSON=/spec/openapi.yaml -v \$$(pwd)/docs/api:/spec swaggerapi/swagger-ui"
+	@echo "  然后访问 http://localhost:8081"
