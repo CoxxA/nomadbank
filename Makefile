@@ -1,4 +1,4 @@
-.PHONY: build run dev clean docker frontend docs test-all
+.PHONY: build run dev clean docker frontend docs test-all lint install-hooks
 
 # 版本信息
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
@@ -64,3 +64,24 @@ docs:
 	@echo "或使用 Docker:"
 	@echo "  docker run -p 8081:8080 -e SWAGGER_JSON=/spec/openapi.yaml -v \$$(pwd)/docs/api:/spec swaggerapi/swagger-ui"
 	@echo "  然后访问 http://localhost:8081"
+
+# 代码检查
+lint:
+	@echo "Running Go lint..."
+	goimports -local github.com/CoxxA/nomadbank -l .
+	go build ./...
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		golangci-lint run; \
+	else \
+		echo "golangci-lint not found, skipping..."; \
+	fi
+	@echo "Running Frontend lint..."
+	cd frontend && npm run lint && npm run format:check
+
+# 安装 pre-commit hook
+install-hooks:
+	@echo "Installing pre-commit hook..."
+	@chmod +x scripts/pre-commit
+	@ln -sf ../../scripts/pre-commit .git/hooks/pre-commit
+	@echo "Pre-commit hook installed!"
+	@echo "To uninstall: rm .git/hooks/pre-commit"
