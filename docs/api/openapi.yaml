@@ -1,0 +1,1201 @@
+openapi: 3.0.3
+info:
+  title: NomadBank API
+  description: |
+    NomadBank - 数字游民银行保活助手 API 文档
+
+    ## 认证
+
+    除了 `/api/v1/system/initialized`、`/api/v1/auth/register`、`/api/v1/auth/login` 外，
+    所有 API 都需要在请求头中携带 JWT Token：
+
+    ```
+    Authorization: Bearer <token>
+    ```
+
+    ## 错误响应
+
+    所有错误响应格式：
+    ```json
+    {
+      "message": "错误描述"
+    }
+    ```
+  version: 1.0.0
+  contact:
+    name: NomadBank
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8080
+    description: 开发服务器
+
+tags:
+  - name: System
+    description: 系统相关接口
+  - name: Auth
+    description: 认证相关接口
+  - name: Users
+    description: 用户管理接口（需管理员权限）
+  - name: Banks
+    description: 银行账户管理接口
+  - name: Strategies
+    description: 保活策略管理接口
+  - name: Tasks
+    description: 转账任务管理接口
+  - name: Notifications
+    description: 通知渠道管理接口
+  - name: Stats
+    description: 统计数据接口
+
+paths:
+  # ==================== 系统 ====================
+  /api/v1/system/initialized:
+    get:
+      tags: [System]
+      summary: 检查系统初始化状态
+      description: 检查系统是否已有用户（用于判断是否需要初始化）
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemStatus'
+
+  # ==================== 认证 ====================
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: 用户注册
+      description: 注册新用户。第一个注册的用户自动成为管理员。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: 请求格式错误
+        '409':
+          description: 用户名已存在
+
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: 用户登录
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: 用户名或密码错误
+
+  /api/v1/auth/me:
+    get:
+      tags: [Auth]
+      summary: 获取当前用户信息
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+        '401':
+          description: 未认证
+
+  /api/v1/auth/password:
+    put:
+      tags: [Auth]
+      summary: 修改密码
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: 修改成功
+        '400':
+          description: 原密码错误
+
+  /api/v1/auth/profile:
+    put:
+      tags: [Auth]
+      summary: 更新个人资料
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+
+  # ==================== 用户管理 ====================
+  /api/v1/users:
+    get:
+      tags: [Users]
+      summary: 获取用户列表
+      description: 需要管理员权限
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '403':
+          description: 需要管理员权限
+    post:
+      tags: [Users]
+      summary: 创建用户
+      description: 需要管理员权限
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '403':
+          description: 需要管理员权限
+        '409':
+          description: 用户名已存在
+
+  /api/v1/users/{id}:
+    put:
+      tags: [Users]
+      summary: 更新用户
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: 更新成功
+        '403':
+          description: 需要管理员权限
+        '404':
+          description: 用户不存在
+    delete:
+      tags: [Users]
+      summary: 删除用户
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 删除成功
+        '400':
+          description: 不能删除自己
+        '403':
+          description: 需要管理员权限
+
+  /api/v1/users/{id}/password:
+    put:
+      tags: [Users]
+      summary: 重置用户密码
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: 重置成功
+        '403':
+          description: 需要管理员权限
+
+  # ==================== 银行 ====================
+  /api/v1/banks:
+    get:
+      tags: [Banks]
+      summary: 获取银行列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive]
+        - name: group
+          in: query
+          schema:
+            type: string
+        - name: q
+          in: query
+          description: 搜索关键词
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankPageResult'
+    post:
+      tags: [Banks]
+      summary: 创建银行
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBankRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bank'
+
+  /api/v1/banks/groups:
+    get:
+      tags: [Banks]
+      summary: 获取银行分组列表
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  groups:
+                    type: array
+                    items:
+                      type: string
+
+  /api/v1/banks/{id}:
+    get:
+      tags: [Banks]
+      summary: 获取银行详情
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bank'
+        '404':
+          description: 银行不存在
+    put:
+      tags: [Banks]
+      summary: 更新银行
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBankRequest'
+      responses:
+        '200':
+          description: 更新成功
+        '404':
+          description: 银行不存在
+    delete:
+      tags: [Banks]
+      summary: 删除银行
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 删除成功
+
+  # ==================== 策略 ====================
+  /api/v1/strategies:
+    get:
+      tags: [Strategies]
+      summary: 获取策略列表
+      description: 返回用户自定义策略和系统预设策略
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Strategy'
+    post:
+      tags: [Strategies]
+      summary: 创建策略
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStrategyRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Strategy'
+
+  /api/v1/strategies/{id}:
+    get:
+      tags: [Strategies]
+      summary: 获取策略详情
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Strategy'
+        '404':
+          description: 策略不存在
+    put:
+      tags: [Strategies]
+      summary: 更新策略
+      description: 系统策略不可修改
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStrategyRequest'
+      responses:
+        '200':
+          description: 更新成功
+        '403':
+          description: 系统策略不可修改
+        '404':
+          description: 策略不存在
+    delete:
+      tags: [Strategies]
+      summary: 删除策略
+      description: 系统策略不可删除
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 删除成功
+        '403':
+          description: 系统策略不可删除
+
+  # ==================== 任务 ====================
+  /api/v1/tasks:
+    get:
+      tags: [Tasks]
+      summary: 获取任务列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, completed, skipped]
+        - name: group
+          in: query
+          schema:
+            type: string
+        - name: cycle
+          in: query
+          schema:
+            type: integer
+        - name: q
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskPageResult'
+    delete:
+      tags: [Tasks]
+      summary: 删除所有任务
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: 删除成功
+
+  /api/v1/tasks/cycles:
+    get:
+      tags: [Tasks]
+      summary: 获取任务周期列表
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cycles:
+                    type: array
+                    items:
+                      type: integer
+
+  /api/v1/tasks/generate:
+    post:
+      tags: [Tasks]
+      summary: 生成任务
+      description: 根据策略自动生成转账任务
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateTasksRequest'
+      responses:
+        '201':
+          description: 生成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateTasksResponse'
+        '400':
+          description: 参数错误（策略不存在、银行数量不足等）
+
+  /api/v1/tasks/{id}/complete:
+    put:
+      tags: [Tasks]
+      summary: 标记任务完成
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: 任务不存在
+
+  # ==================== 通知 ====================
+  /api/v1/notifications:
+    get:
+      tags: [Notifications]
+      summary: 获取通知渠道列表
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationChannel'
+    post:
+      tags: [Notifications]
+      summary: 创建通知渠道
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNotificationRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannel'
+
+  /api/v1/notifications/{id}:
+    put:
+      tags: [Notifications]
+      summary: 更新通知渠道
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNotificationRequest'
+      responses:
+        '200':
+          description: 更新成功
+        '404':
+          description: 通知渠道不存在
+    delete:
+      tags: [Notifications]
+      summary: 删除通知渠道
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 删除成功
+
+  /api/v1/notifications/{id}/test:
+    post:
+      tags: [Notifications]
+      summary: 测试通知渠道
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  description: 测试消息内容
+      responses:
+        '200':
+          description: 测试成功
+        '400':
+          description: 发送失败
+
+  # ==================== 统计 ====================
+  /api/v1/stats/dashboard:
+    get:
+      tags: [Stats]
+      summary: 获取仪表盘统计数据
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardStats'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ========== 系统 ==========
+    SystemStatus:
+      type: object
+      properties:
+        initialized:
+          type: boolean
+        user_count:
+          type: integer
+
+    # ========== 认证 ==========
+    RegisterRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+        password:
+          type: string
+          minLength: 6
+          maxLength: 128
+        nickname:
+          type: string
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserInfo'
+
+    UserInfo:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        role:
+          type: string
+          enum: [admin, user]
+        nickname:
+          type: string
+        avatar:
+          type: string
+
+    ChangePasswordRequest:
+      type: object
+      required: [old_password, new_password]
+      properties:
+        old_password:
+          type: string
+        new_password:
+          type: string
+          minLength: 6
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        nickname:
+          type: string
+        avatar:
+          type: string
+
+    # ========== 用户 ==========
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        role:
+          type: string
+          enum: [admin, user]
+        nickname:
+          type: string
+        avatar:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    CreateUserRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        role:
+          type: string
+          enum: [admin, user]
+        nickname:
+          type: string
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [admin, user]
+        nickname:
+          type: string
+        avatar:
+          type: string
+
+    ResetPasswordRequest:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+
+    # ========== 银行 ==========
+    Bank:
+      type: object
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        name:
+          type: string
+        amount_min:
+          type: number
+        amount_max:
+          type: number
+        strategy_id:
+          type: string
+          nullable: true
+        group_name:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+        updated_at:
+          type: string
+        strategy:
+          $ref: '#/components/schemas/Strategy'
+
+    BankWithNextTask:
+      allOf:
+        - $ref: '#/components/schemas/Bank'
+        - type: object
+          properties:
+            next_exec_date:
+              type: string
+              nullable: true
+            next_exec_time:
+              type: string
+              nullable: true
+            next_to_bank_id:
+              type: string
+              nullable: true
+            next_to_bank_name:
+              type: string
+              nullable: true
+            next_amount:
+              type: number
+              nullable: true
+
+    BankPageResult:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BankWithNextTask'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+
+    CreateBankRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        amount_min:
+          type: number
+          default: 10
+        amount_max:
+          type: number
+          default: 100
+        strategy_id:
+          type: string
+        group_name:
+          type: string
+        is_active:
+          type: boolean
+          default: true
+
+    UpdateBankRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        amount_min:
+          type: number
+        amount_max:
+          type: number
+        strategy_id:
+          type: string
+        group_name:
+          type: string
+        is_active:
+          type: boolean
+
+    # ========== 策略 ==========
+    Strategy:
+      type: object
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        name:
+          type: string
+        interval_min:
+          type: integer
+          description: 最小间隔天数
+        interval_max:
+          type: integer
+          description: 最大间隔天数
+        time_start:
+          type: string
+          description: 执行时段开始 (HH:MM)
+        time_end:
+          type: string
+          description: 执行时段结束 (HH:MM)
+        skip_weekend:
+          type: boolean
+          description: 是否跳过周末
+        amount_min:
+          type: number
+        amount_max:
+          type: number
+        daily_limit:
+          type: integer
+          description: 单日任务上限
+        is_system:
+          type: boolean
+          description: 是否系统预设
+        created_at:
+          type: string
+        updated_at:
+          type: string
+
+    CreateStrategyRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        interval_min:
+          type: integer
+          default: 30
+        interval_max:
+          type: integer
+          default: 60
+        time_start:
+          type: string
+          default: "09:00"
+        time_end:
+          type: string
+          default: "21:00"
+        skip_weekend:
+          type: boolean
+          default: false
+        amount_min:
+          type: number
+          default: 10
+        amount_max:
+          type: number
+          default: 30
+        daily_limit:
+          type: integer
+          default: 3
+
+    UpdateStrategyRequest:
+      $ref: '#/components/schemas/CreateStrategyRequest'
+
+    # ========== 任务 ==========
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        group_name:
+          type: string
+        cycle:
+          type: integer
+        anchor_date:
+          type: string
+        exec_date:
+          type: string
+        exec_time:
+          type: string
+        from_bank_id:
+          type: string
+        to_bank_id:
+          type: string
+        amount:
+          type: number
+        status:
+          type: string
+          enum: [pending, completed, skipped]
+        completed_at:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+        from_bank:
+          $ref: '#/components/schemas/Bank'
+        to_bank:
+          $ref: '#/components/schemas/Bank'
+
+    TaskPageResult:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+
+    GenerateTasksRequest:
+      type: object
+      required: [strategy_id]
+      properties:
+        strategy_id:
+          type: string
+          description: 策略 ID
+        group:
+          type: string
+          description: 银行分组（空表示全部）
+        cycles:
+          type: integer
+          description: 周期数
+          default: 1
+
+    GenerateTasksResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        count:
+          type: integer
+        start_cycle:
+          type: integer
+        end_cycle:
+          type: integer
+
+    # ========== 通知 ==========
+    NotificationChannel:
+      type: object
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [bark, telegram, webhook]
+        config:
+          type: object
+          description: 渠道配置（根据类型不同）
+        is_enabled:
+          type: boolean
+        created_at:
+          type: string
+        updated_at:
+          type: string
+
+    CreateNotificationRequest:
+      type: object
+      required: [name, type, config]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [bark, telegram, webhook]
+        config:
+          type: object
+          description: |
+            根据类型不同：
+            - bark: { device_key: string, server_url?: string }
+            - telegram: { bot_token: string, chat_id: string }
+            - webhook: { url: string, secret?: string }
+        is_enabled:
+          type: boolean
+          default: true
+
+    UpdateNotificationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [bark, telegram, webhook]
+        config:
+          type: object
+        is_enabled:
+          type: boolean
+
+    # ========== 统计 ==========
+    DashboardStats:
+      type: object
+      properties:
+        total_banks:
+          type: integer
+        active_banks:
+          type: integer
+        total_tasks:
+          type: integer
+        pending_tasks:
+          type: integer
+        completed_tasks:
+          type: integer
+        total_strategies:
+          type: integer
+        total_notifications:
+          type: integer
