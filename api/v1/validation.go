@@ -6,61 +6,18 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
-)
 
-const (
-	// ========== 用户验证常量 ==========
-
-	// MinUsernameLength 用户名最小长度
-	MinUsernameLength = 3
-	// MaxUsernameLength 用户名最大长度
-	MaxUsernameLength = 50
-	// MinPasswordLength 密码最小长度
-	MinPasswordLength = 6
-	// MaxPasswordLength 密码最大长度
-	MaxPasswordLength = 128
-	// MaxNameLength 名称字段最大长度（银行名、策略名、通知渠道名等）
-	MaxNameLength = 100
-	// MaxNicknameLength 昵称最大长度
-	MaxNicknameLength = 50
-	// MaxURLLength URL 字段最大长度
-	MaxURLLength = 500
-	// MaxConfigLength 配置字段最大长度
-	MaxConfigLength = 4096
-
-	// ========== 策略默认值 ==========
-
-	// DefaultIntervalMin 默认最小间隔天数
-	DefaultIntervalMin = 30
-	// DefaultIntervalMax 默认最大间隔天数
-	DefaultIntervalMax = 60
-	// DefaultTimeStart 默认开始时间
-	DefaultTimeStart = "09:00"
-	// DefaultTimeEnd 默认结束时间
-	DefaultTimeEnd = "21:00"
-	// DefaultStrategyAmountMin 策略默认最小金额
-	DefaultStrategyAmountMin = 10.0
-	// DefaultStrategyAmountMax 策略默认最大金额
-	DefaultStrategyAmountMax = 30.0
-	// DefaultDailyLimit 默认单日任务上限
-	DefaultDailyLimit = 3
-
-	// ========== 银行默认值 ==========
-
-	// DefaultBankAmountMin 银行默认最小金额
-	DefaultBankAmountMin = 10.0
-	// DefaultBankAmountMax 银行默认最大金额
-	DefaultBankAmountMax = 100.0
+	"github.com/CoxxA/nomadbank/internal/consts"
 )
 
 // validateUsername 验证用户名
 // 返回处理后的用户名和可能的错误
 func validateUsername(username string) (string, error) {
 	username = strings.TrimSpace(username)
-	if len(username) < MinUsernameLength {
+	if len(username) < consts.MinUsernameLength {
 		return "", echo.NewHTTPError(http.StatusBadRequest, "用户名至少 3 个字符")
 	}
-	if len(username) > MaxUsernameLength {
+	if len(username) > consts.MaxUsernameLength {
 		return "", echo.NewHTTPError(http.StatusBadRequest, "用户名不能超过 50 个字符")
 	}
 	return username, nil
@@ -68,10 +25,10 @@ func validateUsername(username string) (string, error) {
 
 // validatePassword 验证密码
 func validatePassword(password string) error {
-	if len(password) < MinPasswordLength {
+	if len(password) < consts.MinPasswordLength {
 		return echo.NewHTTPError(http.StatusBadRequest, "密码至少 6 个字符")
 	}
-	if len(password) > MaxPasswordLength {
+	if len(password) > consts.MaxPasswordLength {
 		return echo.NewHTTPError(http.StatusBadRequest, "密码不能超过 128 个字符")
 	}
 	return nil
@@ -83,7 +40,7 @@ func validateName(name string, fieldName string) (string, error) {
 	if name == "" {
 		return "", echo.NewHTTPError(http.StatusBadRequest, fieldName+"不能为空")
 	}
-	if len(name) > MaxNameLength {
+	if len(name) > consts.MaxNameLength {
 		return "", echo.NewHTTPError(http.StatusBadRequest, fieldName+"不能超过 100 个字符")
 	}
 	return name, nil
@@ -92,7 +49,7 @@ func validateName(name string, fieldName string) (string, error) {
 // validateNickname 验证昵称
 func validateNickname(nickname string) (string, error) {
 	nickname = strings.TrimSpace(nickname)
-	if len(nickname) > MaxNicknameLength {
+	if len(nickname) > consts.MaxNicknameLength {
 		return "", echo.NewHTTPError(http.StatusBadRequest, "昵称不能超过 50 个字符")
 	}
 	return nickname, nil

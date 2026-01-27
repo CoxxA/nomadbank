@@ -13,6 +13,7 @@ import (
 type JWTClaims struct {
 	UserID   string `json:"sub"`
 	Username string `json:"username"`
+	Role     string `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -23,10 +24,11 @@ type JWTConfig struct {
 }
 
 // GenerateToken 生成 JWT Token
-func GenerateToken(cfg *JWTConfig, userID, username string) (string, error) {
+func GenerateToken(cfg *JWTConfig, userID, username, role string) (string, error) {
 	claims := &JWTClaims{
 		UserID:   userID,
 		Username: username,
+		Role:     role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(cfg.ExpireHours) * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -64,6 +66,7 @@ func JWTMiddleware(secret string) echo.MiddlewareFunc {
 			// 将用户信息存入 context
 			c.Set("user_id", claims.UserID)
 			c.Set("username", claims.Username)
+			c.Set("role", claims.Role)
 
 			return next(c)
 		}
@@ -84,4 +87,17 @@ func GetUsername(c echo.Context) string {
 		return name
 	}
 	return ""
+}
+
+// GetUserRole 从 context 获取用户角色
+func GetUserRole(c echo.Context) string {
+	if role, ok := c.Get("role").(string); ok {
+		return role
+	}
+	return ""
+}
+
+// IsAdmin 检查当前用户是否是管理员
+func IsAdmin(c echo.Context) bool {
+	return GetUserRole(c) == "admin"
 }

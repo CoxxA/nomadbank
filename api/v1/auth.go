@@ -121,7 +121,7 @@ func (a *AuthAPI) Register(c echo.Context) error {
 		Secret:      a.config.JWTSecret,
 		ExpireHours: a.config.JWTExpireHours,
 	}
-	token, err := middleware.GenerateToken(jwtCfg, user.ID, user.Username)
+	token, err := middleware.GenerateToken(jwtCfg, user.ID, user.Username, string(user.Role))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "生成 Token 失败")
 	}
@@ -161,7 +161,7 @@ func (a *AuthAPI) Login(c echo.Context) error {
 		Secret:      a.config.JWTSecret,
 		ExpireHours: a.config.JWTExpireHours,
 	}
-	token, err := middleware.GenerateToken(jwtCfg, user.ID, user.Username)
+	token, err := middleware.GenerateToken(jwtCfg, user.ID, user.Username, string(user.Role))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "生成 Token 失败")
 	}

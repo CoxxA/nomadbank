@@ -107,11 +107,21 @@ func (e *testEnv) newRequest(method, path string, body string) (*http.Request, *
 	return req, httptest.NewRecorder()
 }
 
-// newContextWithUser 创建带用户 ID 的 Context
+// newContextWithUser 创建带用户 ID 的 Context（默认管理员角色）
 func (e *testEnv) newContextWithUser(req *http.Request, rec *httptest.ResponseRecorder, userID string) echo.Context {
 	e.t.Helper()
 	c := e.echo.NewContext(req, rec)
 	c.Set("user_id", userID)
+	c.Set("role", "admin") // 默认管理员角色以保持测试兼容
+	return c
+}
+
+// newContextWithUserRole 创建带用户 ID 和角色的 Context
+func (e *testEnv) newContextWithUserRole(req *http.Request, rec *httptest.ResponseRecorder, userID, role string) echo.Context {
+	e.t.Helper()
+	c := e.echo.NewContext(req, rec)
+	c.Set("user_id", userID)
+	c.Set("role", role)
 	return c
 }
 

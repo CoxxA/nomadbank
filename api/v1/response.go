@@ -3,19 +3,15 @@ package v1
 import (
 	"time"
 
+	"github.com/CoxxA/nomadbank/internal/consts"
 	"github.com/CoxxA/nomadbank/store/model"
-)
-
-const (
-	dateLayout = "2006-01-02"
-	timeLayout = "15:04"
 )
 
 func formatDate(value time.Time) string {
 	if value.IsZero() {
 		return ""
 	}
-	return value.Format(dateLayout)
+	return value.Format(consts.DateLayout)
 }
 
 func formatDatePtr(value *time.Time) *string {
@@ -123,7 +119,7 @@ func toTaskResponse(task *model.TransferTask) *TaskResponse {
 	execDate := formatDate(task.ExecDate)
 	execTime := ""
 	if execDate != "" {
-		execTime = task.ExecDate.Format(timeLayout)
+		execTime = task.ExecDate.Format(consts.TimeLayout)
 	}
 	return &TaskResponse{
 		ID:          task.ID,

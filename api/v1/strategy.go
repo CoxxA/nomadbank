@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
+	"github.com/CoxxA/nomadbank/internal/consts"
 	"github.com/CoxxA/nomadbank/server/middleware"
 	"github.com/CoxxA/nomadbank/store"
 	"github.com/CoxxA/nomadbank/store/model"
@@ -70,34 +71,34 @@ func (a *StrategyAPI) Create(c echo.Context) error {
 
 	// 设置默认值并验证
 	if req.IntervalMin <= 0 {
-		req.IntervalMin = DefaultIntervalMin
+		req.IntervalMin = consts.DefaultStrategyIntervalMin
 	}
 	if req.IntervalMax <= 0 {
-		req.IntervalMax = DefaultIntervalMax
+		req.IntervalMax = consts.DefaultStrategyIntervalMax
 	}
 	req.IntervalMin, req.IntervalMax = normalizeIntervalRange(req.IntervalMin, req.IntervalMax)
 
 	// 验证时间格式
 	if req.TimeStart == "" {
-		req.TimeStart = DefaultTimeStart
+		req.TimeStart = consts.DefaultStrategyTimeStart
 	}
 	if req.TimeEnd == "" {
-		req.TimeEnd = DefaultTimeEnd
+		req.TimeEnd = consts.DefaultStrategyTimeEnd
 	}
 	if err := validateTimeRange(req.TimeStart, req.TimeEnd); err != nil {
 		return err
 	}
 
 	if req.AmountMin <= 0 {
-		req.AmountMin = DefaultStrategyAmountMin
+		req.AmountMin = consts.DefaultStrategyAmountMin
 	}
 	if req.AmountMax <= 0 {
-		req.AmountMax = DefaultStrategyAmountMax
+		req.AmountMax = consts.DefaultStrategyAmountMax
 	}
 	req.AmountMin, req.AmountMax = normalizeAmountRange(req.AmountMin, req.AmountMax)
 
 	if req.DailyLimit <= 0 {
-		req.DailyLimit = DefaultDailyLimit
+		req.DailyLimit = consts.DefaultStrategyDailyLimit
 	}
 
 	strategy := &model.Strategy{

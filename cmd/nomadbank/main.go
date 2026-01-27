@@ -3,10 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/CoxxA/nomadbank/internal/config"
+	"github.com/CoxxA/nomadbank/internal/logger"
 	"github.com/CoxxA/nomadbank/server"
 	"github.com/CoxxA/nomadbank/store"
 	"github.com/CoxxA/nomadbank/web"
@@ -52,10 +52,14 @@ func main() {
 		cfg.Mode = mode
 	}
 
+	// 初始化日志
+	log := logger.Default()
+	log.SetLevelFromMode(cfg.Mode)
+
 	// 初始化数据库
 	db, err := store.NewDB(cfg.DBPath(), cfg.IsDev())
 	if err != nil {
-		log.Fatalf("初始化数据库失败: %v", err)
+		log.Fatal("初始化数据库失败: %v", err)
 	}
 
 	// 创建 Store
@@ -71,12 +75,14 @@ func main() {
 	web.RegisterRoutes(srv.Echo())
 
 	// 启动服务
-	log.Printf("NomadBankKeeper 启动中...")
-	log.Printf("数据目录: %s", cfg.DataDir)
-	log.Printf("运行模式: %s", cfg.Mode)
-	log.Printf("服务地址: http://localhost:%d", cfg.Port)
+	log.WithFields(map[string]interface{}{
+		"version":  version,
+		"data_dir": cfg.DataDir,
+		"mode":     cfg.Mode,
+		"port":     cfg.Port,
+	}).Info("NomadBankKeeper 启动中")
 
 	if err := srv.Start(); err != nil {
-		log.Fatalf("服务启动失败: %v", err)
+		log.Fatal("服务启动失败: %v", err)
 	}
 }

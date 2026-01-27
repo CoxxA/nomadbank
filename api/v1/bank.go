@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
+	"github.com/CoxxA/nomadbank/internal/consts"
 	"github.com/CoxxA/nomadbank/server/middleware"
 	"github.com/CoxxA/nomadbank/store"
 	"github.com/CoxxA/nomadbank/store/model"
@@ -20,6 +21,36 @@ type BankAPI struct {
 // NewBankAPI 创建银行 API
 func NewBankAPI(store *store.Store) *BankAPI {
 	return &BankAPI{store: store}
+}
+
+// BankWithNextTaskResponse 带下次任务信息的银行响应
+type BankWithNextTaskResponse struct {
+	BankResponse
+	NextExecDate   *string  `json:"next_exec_date"`
+	NextExecTime   *string  `json:"next_exec_time"`
+	NextToBankID   *string  `json:"next_to_bank_id"`
+	NextToBankName *string  `json:"next_to_bank_name"`
+	NextAmount     *float64 `json:"next_amount"`
+}
+
+// CreateBankRequest 创建银行请求
+type CreateBankRequest struct {
+	Name       string  `json:"name"`
+	AmountMin  float64 `json:"amount_min"`
+	AmountMax  float64 `json:"amount_max"`
+	StrategyID *string `json:"strategy_id"`
+	GroupName  *string `json:"group_name"`
+	IsActive   bool    `json:"is_active"`
+}
+
+// UpdateBankRequest 更新银行请求
+type UpdateBankRequest struct {
+	Name       string  `json:"name"`
+	AmountMin  float64 `json:"amount_min"`
+	AmountMax  float64 `json:"amount_max"`
+	StrategyID *string `json:"strategy_id"`
+	GroupName  *string `json:"group_name"`
+	IsActive   bool    `json:"is_active"`
 }
 
 // Groups 获取银行分组列表
@@ -96,8 +127,8 @@ func (a *BankAPI) List(c echo.Context) error {
 
 		// 添加下次任务信息
 		if task, exists := nextTaskMap[bank.ID]; exists {
-			execDate := task.ExecDate.Format(dateLayout)
-			execTime := task.ExecDate.Format(timeLayout)
+			execDate := task.ExecDate.Format(consts.DateLayout)
+			execTime := task.ExecDate.Format(consts.TimeLayout)
 			toBankName := ""
 			if task.ToBank != nil {
 				toBankName = task.ToBank.Name
@@ -138,10 +169,10 @@ func (a *BankAPI) Create(c echo.Context) error {
 
 	// 设置默认值
 	if req.AmountMin <= 0 {
-		req.AmountMin = DefaultBankAmountMin
+		req.AmountMin = consts.DefaultBankAmountMin
 	}
 	if req.AmountMax <= 0 {
-		req.AmountMax = DefaultBankAmountMax
+		req.AmountMax = consts.DefaultBankAmountMax
 	}
 	req.AmountMin, req.AmountMax = normalizeAmountRange(req.AmountMin, req.AmountMax)
 

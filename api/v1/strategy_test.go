@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"github.com/CoxxA/nomadbank/internal/consts"
 	"github.com/CoxxA/nomadbank/store/model"
 )
 
@@ -158,11 +159,11 @@ func TestStrategyCreate_WithDefaults(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &strategy); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
-	if strategy.IntervalMin != DefaultIntervalMin {
-		t.Errorf("interval_min = %d, want %d", strategy.IntervalMin, DefaultIntervalMin)
+	if strategy.IntervalMin != consts.DefaultStrategyIntervalMin {
+		t.Errorf("interval_min = %d, want %d", strategy.IntervalMin, consts.DefaultStrategyIntervalMin)
 	}
-	if strategy.IntervalMax != DefaultIntervalMax {
-		t.Errorf("interval_max = %d, want %d", strategy.IntervalMax, DefaultIntervalMax)
+	if strategy.IntervalMax != consts.DefaultStrategyIntervalMax {
+		t.Errorf("interval_max = %d, want %d", strategy.IntervalMax, consts.DefaultStrategyIntervalMax)
 	}
 }
 

@@ -9,23 +9,8 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
+	"github.com/CoxxA/nomadbank/internal/consts"
 	"github.com/CoxxA/nomadbank/store/model"
-)
-
-// 系统策略配置常量
-const (
-	// 默认保活策略
-	defaultStrategyIntervalMin = 30
-	defaultStrategyIntervalMax = 60
-	defaultStrategyTimeStart   = "09:00"
-	defaultStrategyTimeEnd     = "21:00"
-	defaultStrategyAmountMin   = 10.0
-	defaultStrategyAmountMax   = 30.0
-	defaultStrategyDailyLimit  = 3
-
-	// 长期保活策略
-	longTermStrategyIntervalMin = 90
-	longTermStrategyIntervalMax = 120
 )
 
 // NewDB 创建数据库连接
@@ -104,14 +89,14 @@ func initSystemStrategies(db *gorm.DB) error {
 		ID:          uuid.New().String(),
 		UserID:      "", // 系统策略无所属用户
 		Name:        "默认保活",
-		IntervalMin: defaultStrategyIntervalMin,
-		IntervalMax: defaultStrategyIntervalMax,
-		TimeStart:   defaultStrategyTimeStart,
-		TimeEnd:     defaultStrategyTimeEnd,
+		IntervalMin: consts.DefaultStrategyIntervalMin,
+		IntervalMax: consts.DefaultStrategyIntervalMax,
+		TimeStart:   consts.DefaultStrategyTimeStart,
+		TimeEnd:     consts.DefaultStrategyTimeEnd,
 		SkipWeekend: false,
-		AmountMin:   defaultStrategyAmountMin,
-		AmountMax:   defaultStrategyAmountMax,
-		DailyLimit:  defaultStrategyDailyLimit,
+		AmountMin:   consts.DefaultStrategyAmountMin,
+		AmountMax:   consts.DefaultStrategyAmountMax,
+		DailyLimit:  consts.DefaultStrategyDailyLimit,
 		IsSystem:    true,
 	}
 
@@ -120,14 +105,14 @@ func initSystemStrategies(db *gorm.DB) error {
 		ID:          uuid.New().String(),
 		UserID:      "", // 系统策略无所属用户
 		Name:        "长期保活",
-		IntervalMin: longTermStrategyIntervalMin,
-		IntervalMax: longTermStrategyIntervalMax,
-		TimeStart:   defaultStrategyTimeStart,
-		TimeEnd:     defaultStrategyTimeEnd,
+		IntervalMin: consts.LongTermStrategyIntervalMin,
+		IntervalMax: consts.LongTermStrategyIntervalMax,
+		TimeStart:   consts.DefaultStrategyTimeStart,
+		TimeEnd:     consts.DefaultStrategyTimeEnd,
 		SkipWeekend: false,
-		AmountMin:   defaultStrategyAmountMin,
-		AmountMax:   defaultStrategyAmountMax,
-		DailyLimit:  defaultStrategyDailyLimit,
+		AmountMin:   consts.DefaultStrategyAmountMin,
+		AmountMax:   consts.DefaultStrategyAmountMax,
+		DailyLimit:  consts.DefaultStrategyDailyLimit,
 		IsSystem:    true,
 	}
 

@@ -67,7 +67,7 @@ func toUserResponse(user *model.User) *UserResponse {
 // List 获取用户列表（管理员）
 func (a *UserAPI) List(c echo.Context) error {
 	// 检查是否是管理员
-	if !a.isAdmin(c) {
+	if !middleware.IsAdmin(c) {
 		return errForbidden(msgRequireAdminRole)
 	}
 
@@ -96,7 +96,7 @@ type CreateUserRequest struct {
 // Create 创建用户（管理员）
 func (a *UserAPI) Create(c echo.Context) error {
 	// 检查是否是管理员
-	if !a.isAdmin(c) {
+	if !middleware.IsAdmin(c) {
 		return errForbidden(msgRequireAdminRole)
 	}
 
@@ -165,7 +165,7 @@ type UpdateUserRequest struct {
 // Update 更新用户（管理员）
 func (a *UserAPI) Update(c echo.Context) error {
 	// 检查是否是管理员
-	if !a.isAdmin(c) {
+	if !middleware.IsAdmin(c) {
 		return errForbidden(msgRequireAdminRole)
 	}
 
@@ -201,7 +201,7 @@ func (a *UserAPI) Update(c echo.Context) error {
 // Delete 删除用户（管理员）
 func (a *UserAPI) Delete(c echo.Context) error {
 	// 检查是否是管理员
-	if !a.isAdmin(c) {
+	if !middleware.IsAdmin(c) {
 		return errForbidden(msgRequireAdminRole)
 	}
 
@@ -234,7 +234,7 @@ type ResetPasswordRequest struct {
 // ResetPassword 重置用户密码（管理员）
 func (a *UserAPI) ResetPassword(c echo.Context) error {
 	// 检查是否是管理员
-	if !a.isAdmin(c) {
+	if !middleware.IsAdmin(c) {
 		return errForbidden(msgRequireAdminRole)
 	}
 
@@ -265,14 +265,4 @@ func (a *UserAPI) ResetPassword(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "密码已重置"})
-}
-
-// isAdmin 检查当前用户是否是管理员
-func (a *UserAPI) isAdmin(c echo.Context) bool {
-	userID := middleware.GetUserID(c)
-	user, err := a.store.GetUserByID(userID)
-	if err != nil {
-		return false
-	}
-	return user.IsAdmin()
 }

@@ -90,7 +90,7 @@ func TestUserList_AsNormalUser(t *testing.T) {
 	api := NewUserAPI(env.store)
 
 	req, rec := env.newRequest(http.MethodGet, "/api/v1/users", "")
-	c := env.newContextWithUser(req, rec, user.ID)
+	c := env.newContextWithUserRole(req, rec, user.ID, "user") // 使用普通用户角色
 
 	err := api.List(c)
 	if err == nil {
