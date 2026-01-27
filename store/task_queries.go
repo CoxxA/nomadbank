@@ -29,7 +29,7 @@ func (s *Store) GetTaskByID(id string) (*model.TransferTask, error) {
 
 // ListTasksByUserID 获取用户的所有任务
 func (s *Store) ListTasksByUserID(userID string) ([]model.TransferTask, error) {
-	var tasks []model.TransferTask
+	tasks := make([]model.TransferTask, 0)
 	if err := s.db.Preload("FromBank").Preload("ToBank").
 		Where("user_id = ?", userID).
 		Order("exec_date ASC").
@@ -45,7 +45,7 @@ func (s *Store) ListTasksByUserIDPaged(
 	page int,
 	pageSize int,
 ) ([]model.TransferTask, error) {
-	var tasks []model.TransferTask
+	tasks := make([]model.TransferTask, 0)
 	offset := (page - 1) * pageSize
 	query := s.applyTaskFilters(s.db.Preload("FromBank").Preload("ToBank").Model(&model.TransferTask{}), userID, filter)
 	if err := query.Order("exec_date ASC, id ASC").Offset(offset).Limit(pageSize).Find(&tasks).Error; err != nil {
@@ -64,7 +64,7 @@ func (s *Store) CountTasksByUserID(userID string, filter TaskListFilter) (int64,
 }
 
 func (s *Store) ListTaskCycles(userID string) ([]int, error) {
-	var cycles []int
+	cycles := make([]int, 0)
 	if err := s.db.Model(&model.TransferTask{}).
 		Where("user_id = ?", userID).
 		Distinct().
@@ -76,7 +76,7 @@ func (s *Store) ListTaskCycles(userID string) ([]int, error) {
 }
 
 func (s *Store) ListPendingTasksByFromBankIDs(userID string, bankIDs []string) ([]model.TransferTask, error) {
-	var tasks []model.TransferTask
+	tasks := make([]model.TransferTask, 0)
 	if len(bankIDs) == 0 {
 		return tasks, nil
 	}
@@ -91,7 +91,7 @@ func (s *Store) ListPendingTasksByFromBankIDs(userID string, bankIDs []string) (
 
 // ListPendingTasksByUserID 获取用户的待执行任务
 func (s *Store) ListPendingTasksByUserID(userID string) ([]model.TransferTask, error) {
-	var tasks []model.TransferTask
+	tasks := make([]model.TransferTask, 0)
 	if err := s.db.Preload("FromBank").Preload("ToBank").
 		Where("user_id = ? AND status = ?", userID, model.TaskStatusPending).
 		Order("exec_date ASC").
@@ -103,7 +103,7 @@ func (s *Store) ListPendingTasksByUserID(userID string) ([]model.TransferTask, e
 
 // ListCompletedTasksByUserID 获取用户的已完成任务
 func (s *Store) ListCompletedTasksByUserID(userID string) ([]model.TransferTask, error) {
-	var tasks []model.TransferTask
+	tasks := make([]model.TransferTask, 0)
 	if err := s.db.Where("user_id = ? AND status = ?", userID, model.TaskStatusCompleted).
 		Order("completed_at DESC").
 		Find(&tasks).Error; err != nil {

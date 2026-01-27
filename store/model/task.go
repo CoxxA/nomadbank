@@ -14,9 +14,9 @@ const (
 // TransferTask 转账任务模型
 type TransferTask struct {
 	ID          string     `gorm:"primaryKey;size:36" json:"id"`
-	UserID      string     `gorm:"index:idx_tasks_user_exec,priority:1;index:idx_tasks_user_status_exec,priority:1;size:36;not null" json:"user_id"`
-	GroupName   string     `gorm:"index;size:50;default:''" json:"group_name"` // 分组名称，空字符串表示"全部银行"
-	Cycle       int        `gorm:"not null" json:"cycle"`
+	UserID      string     `gorm:"index:idx_tasks_user_exec,priority:1;index:idx_tasks_user_status_exec,priority:1;index:idx_tasks_user_group_cycle,priority:1;size:36;not null" json:"user_id"`
+	GroupName   string     `gorm:"index:idx_tasks_user_group_cycle,priority:2;index;size:50;default:''" json:"group_name"` // 分组名称，空字符串表示"全部银行"
+	Cycle       int        `gorm:"index:idx_tasks_user_group_cycle,priority:3;not null" json:"cycle"`
 	AnchorDate  time.Time  `gorm:"not null" json:"anchor_date"`
 	ExecDate    time.Time  `gorm:"index:idx_tasks_user_exec,priority:2;index:idx_tasks_user_status_exec,priority:3;not null" json:"exec_date"`
 	FromBankID  string     `gorm:"index;size:36;not null" json:"from_bank_id"`

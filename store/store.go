@@ -42,7 +42,7 @@ func (s *Store) GetUserByUsername(username string) (*model.User, error) {
 
 // ListUsers 获取所有用户
 func (s *Store) ListUsers() ([]model.User, error) {
-	var users []model.User
+	users := make([]model.User, 0)
 	if err := s.db.Order("created_at ASC").Find(&users).Error; err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (s *Store) GetStrategyByID(id string) (*model.Strategy, error) {
 
 // ListStrategiesByUserID 获取用户的所有策略（包含系统策略）
 func (s *Store) ListStrategiesByUserID(userID string) ([]model.Strategy, error) {
-	var strategies []model.Strategy
+	strategies := make([]model.Strategy, 0)
 	// 返回用户自己的策略 + 系统策略
 	if err := s.db.Where("user_id = ? OR is_system = ?", userID, true).
 		Order("is_system DESC, created_at ASC").
@@ -113,9 +113,18 @@ func (s *Store) CreateNotification(notification *model.NotificationChannel) erro
 	return s.db.Create(notification).Error
 }
 
+// GetNotificationByID 根据 ID 获取通知渠道
+func (s *Store) GetNotificationByID(id string) (*model.NotificationChannel, error) {
+	var notification model.NotificationChannel
+	if err := s.db.First(&notification, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return &notification, nil
+}
+
 // ListNotificationsByUserID 获取用户的所有通知渠道
 func (s *Store) ListNotificationsByUserID(userID string) ([]model.NotificationChannel, error) {
-	var notifications []model.NotificationChannel
+	notifications := make([]model.NotificationChannel, 0)
 	if err := s.db.Where("user_id = ?", userID).Find(&notifications).Error; err != nil {
 		return nil, err
 	}

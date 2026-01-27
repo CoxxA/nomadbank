@@ -20,7 +20,7 @@ func (s *Store) GetBankByID(id string) (*model.Bank, error) {
 
 // ListBanksByUserID 获取用户的所有银行
 func (s *Store) ListBanksByUserID(userID string) ([]model.Bank, error) {
-	var banks []model.Bank
+	banks := make([]model.Bank, 0)
 	if err := s.db.Preload("Strategy").Where("user_id = ?", userID).Find(&banks).Error; err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func (s *Store) ListBanksByUserID(userID string) ([]model.Bank, error) {
 
 // ListActiveBanksByUserID 获取用户的活跃银行
 func (s *Store) ListActiveBanksByUserID(userID string) ([]model.Bank, error) {
-	var banks []model.Bank
+	banks := make([]model.Bank, 0)
 	if err := s.db.Where("user_id = ? AND is_active = ?", userID, true).Find(&banks).Error; err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (s *Store) DeleteBank(id string) error {
 
 // ListActiveBanksByIDs 根据 ID 列表获取活跃银行
 func (s *Store) ListActiveBanksByIDs(userID string, bankIDs []string) ([]model.Bank, error) {
-	var banks []model.Bank
+	banks := make([]model.Bank, 0)
 	if err := s.db.Where("user_id = ? AND is_active = ? AND id IN ?", userID, true, bankIDs).Find(&banks).Error; err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (s *Store) ListActiveBanksByIDs(userID string, bankIDs []string) ([]model.B
 
 // ListActiveBanksByGroup 根据分组获取活跃银行
 func (s *Store) ListActiveBanksByGroup(userID string, groupName string) ([]model.Bank, error) {
-	var banks []model.Bank
+	banks := make([]model.Bank, 0)
 	if err := s.db.Where("user_id = ? AND is_active = ? AND group_name = ?", userID, true, groupName).Find(&banks).Error; err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (s *Store) ListBanksByUserIDPaged(
 	page int,
 	pageSize int,
 ) ([]model.Bank, error) {
-	var banks []model.Bank
+	banks := make([]model.Bank, 0)
 	offset := (page - 1) * pageSize
 	query := s.applyBankFilters(s.db.Preload("Strategy").Model(&model.Bank{}), userID, filter)
 	if err := query.Order("created_at ASC, id ASC").Offset(offset).Limit(pageSize).Find(&banks).Error; err != nil {
@@ -89,7 +89,7 @@ func (s *Store) CountBanksByUserID(userID string, filter BankListFilter) (int64,
 }
 
 func (s *Store) ListBankGroups(userID string) ([]string, error) {
-	var groups []string
+	groups := make([]string, 0)
 	if err := s.db.Model(&model.Bank{}).
 		Where("user_id = ? AND group_name IS NOT NULL AND group_name != ''", userID).
 		Distinct().

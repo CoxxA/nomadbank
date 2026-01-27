@@ -11,6 +11,22 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// 系统策略配置常量
+const (
+	// 默认保活策略
+	defaultStrategyIntervalMin = 30
+	defaultStrategyIntervalMax = 60
+	defaultStrategyTimeStart   = "09:00"
+	defaultStrategyTimeEnd     = "21:00"
+	defaultStrategyAmountMin   = 10.0
+	defaultStrategyAmountMax   = 30.0
+	defaultStrategyDailyLimit  = 3
+
+	// 长期保活策略
+	longTermStrategyIntervalMin = 90
+	longTermStrategyIntervalMax = 120
+)
+
 // NewDB 创建数据库连接
 func NewDB(dbPath string, debug bool) (*gorm.DB, error) {
 	// 确保数据目录存在
@@ -87,14 +103,14 @@ func initSystemStrategies(db *gorm.DB) error {
 		ID:          uuid.New().String(),
 		UserID:      "", // 系统策略无所属用户
 		Name:        "默认保活",
-		IntervalMin: 30,
-		IntervalMax: 60,
-		TimeStart:   "09:00",
-		TimeEnd:     "21:00",
+		IntervalMin: defaultStrategyIntervalMin,
+		IntervalMax: defaultStrategyIntervalMax,
+		TimeStart:   defaultStrategyTimeStart,
+		TimeEnd:     defaultStrategyTimeEnd,
 		SkipWeekend: false,
-		AmountMin:   10,
-		AmountMax:   30,
-		DailyLimit:  3,
+		AmountMin:   defaultStrategyAmountMin,
+		AmountMax:   defaultStrategyAmountMax,
+		DailyLimit:  defaultStrategyDailyLimit,
 		IsSystem:    true,
 	}
 
@@ -103,14 +119,14 @@ func initSystemStrategies(db *gorm.DB) error {
 		ID:          uuid.New().String(),
 		UserID:      "", // 系统策略无所属用户
 		Name:        "长期保活",
-		IntervalMin: 90,
-		IntervalMax: 120,
-		TimeStart:   "09:00",
-		TimeEnd:     "21:00",
+		IntervalMin: longTermStrategyIntervalMin,
+		IntervalMax: longTermStrategyIntervalMax,
+		TimeStart:   defaultStrategyTimeStart,
+		TimeEnd:     defaultStrategyTimeEnd,
 		SkipWeekend: false,
-		AmountMin:   10,
-		AmountMax:   30,
-		DailyLimit:  3,
+		AmountMin:   defaultStrategyAmountMin,
+		AmountMax:   defaultStrategyAmountMax,
+		DailyLimit:  defaultStrategyDailyLimit,
 		IsSystem:    true,
 	}
 

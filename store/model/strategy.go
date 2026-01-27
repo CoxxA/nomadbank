@@ -5,7 +5,7 @@ import "time"
 // Strategy 保活策略模型
 type Strategy struct {
 	ID     string `gorm:"primaryKey;size:36" json:"id"`
-	UserID string `gorm:"index;size:36" json:"user_id"` // 系统策略为空
+	UserID string `gorm:"index:idx_strategies_user_system,priority:1;size:36" json:"user_id"` // 系统策略为空
 
 	Name string `gorm:"size:255;not null" json:"name"`
 
@@ -24,7 +24,7 @@ type Strategy struct {
 	DailyLimit int `gorm:"not null;default:3" json:"daily_limit"` // 单日任务上限
 
 	// 元信息
-	IsSystem  bool      `gorm:"default:false" json:"is_system"` // 是否系统预设
+	IsSystem  bool      `gorm:"index:idx_strategies_user_system,priority:2;default:false" json:"is_system"` // 是否系统预设
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
