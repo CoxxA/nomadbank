@@ -265,7 +265,7 @@ func sendBarkNotification(config map[string]interface{}, message string) error {
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("Bark 返回错误: %s", string(body))
+		return fmt.Errorf("bark 返回错误: %s", string(body))
 	}
 
 	return nil
@@ -304,7 +304,7 @@ func sendTelegramNotification(config map[string]interface{}, message string) err
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("Telegram 返回错误: %s", string(body))
+		return fmt.Errorf("telegram 返回错误: %s", string(body))
 	}
 
 	return nil
