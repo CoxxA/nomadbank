@@ -133,12 +133,12 @@ func (l *Logger) log(level Level, msg string, args ...interface{}) {
 
 	data, err := json.Marshal(entry)
 	if err != nil {
-		fmt.Fprintf(l.out, `{"time":"%s","level":"ERROR","msg":"failed to marshal log entry: %v"}`+"\n",
+		_, _ = fmt.Fprintf(l.out, `{"time":"%s","level":"ERROR","msg":"failed to marshal log entry: %v"}`+"\n",
 			time.Now().Format(time.RFC3339), err)
 		return
 	}
 
-	fmt.Fprintln(l.out, string(data))
+	_, _ = fmt.Fprintln(l.out, string(data))
 }
 
 // Debug 调试级别日志
