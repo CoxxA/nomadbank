@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/CoxxA/nomadbank/api/v1"
+	v1 "github.com/CoxxA/nomadbank/api/v1"
 	"github.com/CoxxA/nomadbank/server/middleware"
 )
 
