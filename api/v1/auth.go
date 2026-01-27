@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 // AuthAPI 认证 API
@@ -56,22 +58,27 @@ type UserInfo struct {
 func (a *AuthAPI) Register(c echo.Context) error {
 	var req RegisterRequest
 	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "请求格式错误")
+		return errBadRequest(msgRequestFormatError)
 	}
 
 	// 验证用户名
-	req.Username = strings.TrimSpace(req.Username)
-	if len(req.Username) < 3 {
-		return echo.NewHTTPError(http.StatusBadRequest, "用户名至少 3 个字符")
+	username, err := validateUsername(req.Username)
+	if err != nil {
+		return err
 	}
+	req.Username = username
 
 	// 验证密码
-	if len(req.Password) < 6 {
-		return echo.NewHTTPError(http.StatusBadRequest, "密码至少 6 个字符")
+	if err := validatePassword(req.Password); err != nil {
+		return err
 	}
 
 	// 检查用户名是否已存在
-	existing, _ := a.store.GetUserByUsername(req.Username)
+	existing, err := a.store.GetUserByUsername(req.Username)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		// 数据库错误，非"用户不存在"
+		return echo.NewHTTPError(http.StatusInternalServerError, "检查用户名失败")
+	}
 	if existing != nil {
 		return echo.NewHTTPError(http.StatusConflict, "用户名已存在")
 	}
@@ -79,7 +86,7 @@ func (a *AuthAPI) Register(c echo.Context) error {
 	// 哈希密码
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "密码处理失败")
+		return errInternal(msgPasswordProcessFail)
 	}
 
 	// 检查是否是第一个用户（自动成为管理员）
@@ -134,7 +141,7 @@ func (a *AuthAPI) Register(c echo.Context) error {
 func (a *AuthAPI) Login(c echo.Context) error {
 	var req LoginRequest
 	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "请求格式错误")
+		return errBadRequest(msgRequestFormatError)
 	}
 
 	// 查找用户
@@ -200,12 +207,12 @@ func (a *AuthAPI) ChangePassword(c echo.Context) error {
 
 	var req ChangePasswordRequest
 	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "请求格式错误")
+		return errBadRequest(msgRequestFormatError)
 	}
 
 	// 验证新密码
-	if len(req.NewPassword) < 6 {
-		return echo.NewHTTPError(http.StatusBadRequest, "新密码至少 6 个字符")
+	if err := validatePassword(req.NewPassword); err != nil {
+		return err
 	}
 
 	// 获取用户
@@ -222,7 +229,7 @@ func (a *AuthAPI) ChangePassword(c echo.Context) error {
 	// 哈希新密码
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "密码处理失败")
+		return errInternal(msgPasswordProcessFail)
 	}
 
 	user.PasswordHash = string(hashedPassword)
@@ -245,7 +252,7 @@ func (a *AuthAPI) UpdateProfile(c echo.Context) error {
 
 	var req UpdateProfileRequest
 	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "请求格式错误")
+		return errBadRequest(msgRequestFormatError)
 	}
 
 	user, err := a.store.GetUserByID(userID)
@@ -255,7 +262,11 @@ func (a *AuthAPI) UpdateProfile(c echo.Context) error {
 
 	// 更新字段
 	if req.Nickname != "" {
-		user.Nickname = strings.TrimSpace(req.Nickname)
+		nickname, err := validateNickname(req.Nickname)
+		if err != nil {
+			return err
+		}
+		user.Nickname = nickname
 	}
 	if req.Avatar != "" {
 		user.Avatar = req.Avatar

@@ -96,7 +96,7 @@ func (a *TaskAPI) Generate(c echo.Context) error {
 
 	var req GenerateTasksRequest
 	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "请求格式错误")
+		return errBadRequest(msgRequestFormatError)
 	}
 
 	service := tasks.NewService(a.store, nil)
@@ -135,7 +135,7 @@ func (a *TaskAPI) Complete(c echo.Context) error {
 	}
 
 	if task.UserID != userID {
-		return echo.NewHTTPError(http.StatusForbidden, "无权访问")
+		return errForbidden(msgNoAccess)
 	}
 
 	now := time.Now()

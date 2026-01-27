@@ -3,6 +3,7 @@ package v1
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,7 +16,18 @@ import (
 	"github.com/CoxxA/nomadbank/store/model"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
+
+// 共享 HTTP 客户端，用于发送通知请求
+var notificationHTTPClient = &http.Client{
+	Timeout: 10 * time.Second,
+	Transport: &http.Transport{
+		MaxIdleConns:        10,
+		MaxIdleConnsPerHost: 5,
+		IdleConnTimeout:     30 * time.Second,
+	},
+}
 
 // NotificationAPI 通知渠道 API
 type NotificationAPI struct {
@@ -60,14 +72,15 @@ func (a *NotificationAPI) Create(c echo.Context) error {
 
 	var req CreateNotificationRequest
 	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "请求格式错误")
+		return errBadRequest(msgRequestFormatError)
 	}
 
 	// 验证名称
-	req.Name = strings.TrimSpace(req.Name)
-	if req.Name == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "通知渠道名称不能为空")
+	name, err := validateName(req.Name, "通知渠道名称")
+	if err != nil {
+		return err
 	}
+	req.Name = name
 
 	// 验证类型
 	notifType := model.NotificationType(req.Type)
@@ -102,26 +115,22 @@ func (a *NotificationAPI) Update(c echo.Context) error {
 	userID := middleware.GetUserID(c)
 	notifID := c.Param("id")
 
-	notifications, err := a.store.ListNotificationsByUserID(userID)
+	notification, err := a.store.GetNotificationByID(notifID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, "通知渠道不存在")
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, "获取通知渠道失败")
 	}
 
-	var notification *model.NotificationChannel
-	for i := range notifications {
-		if notifications[i].ID == notifID {
-			notification = &notifications[i]
-			break
-		}
-	}
-
-	if notification == nil {
-		return echo.NewHTTPError(http.StatusNotFound, "通知渠道不存在")
+	// 验证所有权
+	if notification.UserID != userID {
+		return errForbidden(msgNoAccess)
 	}
 
 	var req CreateNotificationRequest
 	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "请求格式错误")
+		return errBadRequest(msgRequestFormatError)
 	}
 
 	// 更新字段
@@ -150,21 +159,17 @@ func (a *NotificationAPI) Delete(c echo.Context) error {
 	userID := middleware.GetUserID(c)
 	notifID := c.Param("id")
 
-	notifications, err := a.store.ListNotificationsByUserID(userID)
+	notification, err := a.store.GetNotificationByID(notifID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, "通知渠道不存在")
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, "获取通知渠道失败")
 	}
 
-	var found bool
-	for _, n := range notifications {
-		if n.ID == notifID {
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		return echo.NewHTTPError(http.StatusNotFound, "通知渠道不存在")
+	// 验证所有权
+	if notification.UserID != userID {
+		return errForbidden(msgNoAccess)
 	}
 
 	if err := a.store.DeleteNotification(notifID); err != nil {
@@ -184,22 +189,18 @@ func (a *NotificationAPI) Test(c echo.Context) error {
 	userID := middleware.GetUserID(c)
 	notifID := c.Param("id")
 
-	// 查找通知渠道
-	notifications, err := a.store.ListNotificationsByUserID(userID)
+	// 直接通过 ID 查找通知渠道
+	notification, err := a.store.GetNotificationByID(notifID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return echo.NewHTTPError(http.StatusNotFound, "通知渠道不存在")
+		}
 		return echo.NewHTTPError(http.StatusInternalServerError, "获取通知渠道失败")
 	}
 
-	var notification *model.NotificationChannel
-	for i := range notifications {
-		if notifications[i].ID == notifID {
-			notification = &notifications[i]
-			break
-		}
-	}
-
-	if notification == nil {
-		return echo.NewHTTPError(http.StatusNotFound, "通知渠道不存在")
+	// 验证所有权
+	if notification.UserID != userID {
+		return errForbidden(msgNoAccess)
 	}
 
 	// 获取测试消息
@@ -255,8 +256,7 @@ func sendBarkNotification(config map[string]interface{}, message string) error {
 		url.PathEscape(message),
 	)
 
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Get(barkURL)
+	resp, err := notificationHTTPClient.Get(barkURL)
 	if err != nil {
 		return fmt.Errorf("发送 Bark 通知失败: %v", err)
 	}
@@ -295,8 +295,7 @@ func sendTelegramNotification(config map[string]interface{}, message string) err
 		return fmt.Errorf("序列化请求失败: %v", err)
 	}
 
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Post(telegramURL, "application/json", bytes.NewBuffer(jsonData))
+	resp, err := notificationHTTPClient.Post(telegramURL, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return fmt.Errorf("发送 Telegram 通知失败: %v", err)
 	}

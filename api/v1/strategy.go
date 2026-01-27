@@ -2,7 +2,6 @@ package v1
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/CoxxA/nomadbank/server/middleware"
 	"github.com/CoxxA/nomadbank/store"
@@ -58,42 +57,46 @@ func (a *StrategyAPI) Create(c echo.Context) error {
 
 	var req CreateStrategyRequest
 	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "请求格式错误")
+		return errBadRequest(msgRequestFormatError)
 	}
 
 	// 验证名称
-	req.Name = strings.TrimSpace(req.Name)
-	if req.Name == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "策略名称不能为空")
+	name, err := validateName(req.Name, "策略名称")
+	if err != nil {
+		return err
 	}
+	req.Name = name
 
 	// 设置默认值并验证
 	if req.IntervalMin <= 0 {
-		req.IntervalMin = 30
+		req.IntervalMin = DefaultIntervalMin
 	}
 	if req.IntervalMax <= 0 {
-		req.IntervalMax = 60
+		req.IntervalMax = DefaultIntervalMax
 	}
-	if req.IntervalMin > req.IntervalMax {
-		req.IntervalMin, req.IntervalMax = req.IntervalMax, req.IntervalMin
-	}
+	req.IntervalMin, req.IntervalMax = normalizeIntervalRange(req.IntervalMin, req.IntervalMax)
+
+	// 验证时间格式
 	if req.TimeStart == "" {
-		req.TimeStart = "09:00"
+		req.TimeStart = DefaultTimeStart
 	}
 	if req.TimeEnd == "" {
-		req.TimeEnd = "21:00"
+		req.TimeEnd = DefaultTimeEnd
 	}
+	if err := validateTimeRange(req.TimeStart, req.TimeEnd); err != nil {
+		return err
+	}
+
 	if req.AmountMin <= 0 {
-		req.AmountMin = 10
+		req.AmountMin = DefaultStrategyAmountMin
 	}
 	if req.AmountMax <= 0 {
-		req.AmountMax = 30
+		req.AmountMax = DefaultStrategyAmountMax
 	}
-	if req.AmountMin > req.AmountMax {
-		req.AmountMin, req.AmountMax = req.AmountMax, req.AmountMin
-	}
+	req.AmountMin, req.AmountMax = normalizeAmountRange(req.AmountMin, req.AmountMax)
+
 	if req.DailyLimit <= 0 {
-		req.DailyLimit = 3
+		req.DailyLimit = DefaultDailyLimit
 	}
 
 	strategy := &model.Strategy{
@@ -130,7 +133,7 @@ func (a *StrategyAPI) Get(c echo.Context) error {
 
 	// 系统策略所有人可访问，用户策略只能本人访问
 	if !strategy.IsSystem && strategy.UserID != userID {
-		return echo.NewHTTPError(http.StatusForbidden, "无权访问")
+		return errForbidden(msgNoAccess)
 	}
 
 	return c.JSON(http.StatusOK, toStrategyResponse(strategy))
@@ -152,37 +155,48 @@ func (a *StrategyAPI) Update(c echo.Context) error {
 	}
 
 	if strategy.UserID != userID {
-		return echo.NewHTTPError(http.StatusForbidden, "无权访问")
+		return errForbidden(msgNoAccess)
 	}
 
 	var req CreateStrategyRequest
 	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "请求格式错误")
+		return errBadRequest(msgRequestFormatError)
 	}
 
 	// 验证名称
-	req.Name = strings.TrimSpace(req.Name)
-	if req.Name == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "策略名称不能为空")
+	name, err := validateName(req.Name, "策略名称")
+	if err != nil {
+		return err
 	}
 
 	// 更新字段
-	strategy.Name = req.Name
+	strategy.Name = name
 	if req.IntervalMin > 0 {
 		strategy.IntervalMin = req.IntervalMin
 	}
 	if req.IntervalMax > 0 {
 		strategy.IntervalMax = req.IntervalMax
 	}
-	if strategy.IntervalMin > strategy.IntervalMax {
-		strategy.IntervalMin, strategy.IntervalMax = strategy.IntervalMax, strategy.IntervalMin
-	}
+	strategy.IntervalMin, strategy.IntervalMax = normalizeIntervalRange(strategy.IntervalMin, strategy.IntervalMax)
+
+	// 验证时间格式
 	if req.TimeStart != "" {
+		if err := validateTimeFormat(req.TimeStart); err != nil {
+			return err
+		}
 		strategy.TimeStart = req.TimeStart
 	}
 	if req.TimeEnd != "" {
+		if err := validateTimeFormat(req.TimeEnd); err != nil {
+			return err
+		}
 		strategy.TimeEnd = req.TimeEnd
 	}
+	// 验证时间范围
+	if err := validateTimeRange(strategy.TimeStart, strategy.TimeEnd); err != nil {
+		return err
+	}
+
 	strategy.SkipWeekend = req.SkipWeekend
 	if req.AmountMin > 0 {
 		strategy.AmountMin = req.AmountMin
@@ -190,9 +204,8 @@ func (a *StrategyAPI) Update(c echo.Context) error {
 	if req.AmountMax > 0 {
 		strategy.AmountMax = req.AmountMax
 	}
-	if strategy.AmountMin > strategy.AmountMax {
-		strategy.AmountMin, strategy.AmountMax = strategy.AmountMax, strategy.AmountMin
-	}
+	strategy.AmountMin, strategy.AmountMax = normalizeAmountRange(strategy.AmountMin, strategy.AmountMax)
+
 	if req.DailyLimit > 0 {
 		strategy.DailyLimit = req.DailyLimit
 	}
@@ -220,7 +233,7 @@ func (a *StrategyAPI) Delete(c echo.Context) error {
 	}
 
 	if strategy.UserID != userID {
-		return echo.NewHTTPError(http.StatusForbidden, "无权访问")
+		return errForbidden(msgNoAccess)
 	}
 
 	if err := a.store.DeleteStrategy(strategyID); err != nil {

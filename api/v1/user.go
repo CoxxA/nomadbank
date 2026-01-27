@@ -1,8 +1,8 @@
 package v1
 
 import (
+	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/CoxxA/nomadbank/server/middleware"
 	"github.com/CoxxA/nomadbank/store"
@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 // UserAPI 用户管理 API
@@ -66,7 +67,7 @@ func toUserResponse(user *model.User) *UserResponse {
 func (a *UserAPI) List(c echo.Context) error {
 	// 检查是否是管理员
 	if !a.isAdmin(c) {
-		return echo.NewHTTPError(http.StatusForbidden, "需要管理员权限")
+		return errForbidden(msgRequireAdminRole)
 	}
 
 	users, err := a.store.ListUsers()
@@ -95,27 +96,32 @@ type CreateUserRequest struct {
 func (a *UserAPI) Create(c echo.Context) error {
 	// 检查是否是管理员
 	if !a.isAdmin(c) {
-		return echo.NewHTTPError(http.StatusForbidden, "需要管理员权限")
+		return errForbidden(msgRequireAdminRole)
 	}
 
 	var req CreateUserRequest
 	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "请求格式错误")
+		return errBadRequest(msgRequestFormatError)
 	}
 
 	// 验证用户名
-	req.Username = strings.TrimSpace(req.Username)
-	if len(req.Username) < 3 {
-		return echo.NewHTTPError(http.StatusBadRequest, "用户名至少 3 个字符")
+	username, err := validateUsername(req.Username)
+	if err != nil {
+		return err
 	}
+	req.Username = username
 
 	// 验证密码
-	if len(req.Password) < 6 {
-		return echo.NewHTTPError(http.StatusBadRequest, "密码至少 6 个字符")
+	if err := validatePassword(req.Password); err != nil {
+		return err
 	}
 
 	// 检查用户名是否已存在
-	existing, _ := a.store.GetUserByUsername(req.Username)
+	existing, err := a.store.GetUserByUsername(req.Username)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		// 数据库错误，非"用户不存在"
+		return echo.NewHTTPError(http.StatusInternalServerError, "检查用户名失败")
+	}
 	if existing != nil {
 		return echo.NewHTTPError(http.StatusConflict, "用户名已存在")
 	}
@@ -123,7 +129,7 @@ func (a *UserAPI) Create(c echo.Context) error {
 	// 哈希密码
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "密码处理失败")
+		return errInternal(msgPasswordProcessFail)
 	}
 
 	// 设置默认角色
@@ -159,7 +165,7 @@ type UpdateUserRequest struct {
 func (a *UserAPI) Update(c echo.Context) error {
 	// 检查是否是管理员
 	if !a.isAdmin(c) {
-		return echo.NewHTTPError(http.StatusForbidden, "需要管理员权限")
+		return errForbidden(msgRequireAdminRole)
 	}
 
 	userID := c.Param("id")
@@ -170,7 +176,7 @@ func (a *UserAPI) Update(c echo.Context) error {
 
 	var req UpdateUserRequest
 	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "请求格式错误")
+		return errBadRequest(msgRequestFormatError)
 	}
 
 	// 更新字段
@@ -195,7 +201,7 @@ func (a *UserAPI) Update(c echo.Context) error {
 func (a *UserAPI) Delete(c echo.Context) error {
 	// 检查是否是管理员
 	if !a.isAdmin(c) {
-		return echo.NewHTTPError(http.StatusForbidden, "需要管理员权限")
+		return errForbidden(msgRequireAdminRole)
 	}
 
 	currentUserID := middleware.GetUserID(c)
@@ -228,7 +234,7 @@ type ResetPasswordRequest struct {
 func (a *UserAPI) ResetPassword(c echo.Context) error {
 	// 检查是否是管理员
 	if !a.isAdmin(c) {
-		return echo.NewHTTPError(http.StatusForbidden, "需要管理员权限")
+		return errForbidden(msgRequireAdminRole)
 	}
 
 	userID := c.Param("id")
@@ -239,17 +245,17 @@ func (a *UserAPI) ResetPassword(c echo.Context) error {
 
 	var req ResetPasswordRequest
 	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "请求格式错误")
+		return errBadRequest(msgRequestFormatError)
 	}
 
-	if len(req.Password) < 6 {
-		return echo.NewHTTPError(http.StatusBadRequest, "密码至少 6 个字符")
+	if err := validatePassword(req.Password); err != nil {
+		return err
 	}
 
 	// 哈希新密码
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "密码处理失败")
+		return errInternal(msgPasswordProcessFail)
 	}
 
 	user.PasswordHash = string(hashedPassword)

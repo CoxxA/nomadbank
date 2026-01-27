@@ -26,10 +26,15 @@ func New(cfg *config.Config, store *store.Store) *Server {
 	// 全局中间件
 	e.Use(echoMiddleware.Logger())
 	e.Use(echoMiddleware.Recover())
+	e.Use(echoMiddleware.BodyLimit("1M")) // 限制请求体大小为 1MB
 
-	// 开发模式下启用 CORS
+	// CORS 配置
 	if cfg.IsDev() {
+		// 开发模式允许所有来源
 		e.Use(middleware.CORSMiddleware())
+	} else if len(cfg.CORSOrigins) > 0 {
+		// 生产模式只允许配置的来源
+		e.Use(middleware.CORSMiddlewareWithOrigins(cfg.CORSOrigins))
 	}
 
 	return &Server{

@@ -1,0 +1,48 @@
+package v1
+
+import (
+	"net/http"
+
+	"github.com/labstack/echo/v4"
+)
+
+// 常用错误响应辅助函数
+// 减少重复的 echo.NewHTTPError 调用
+
+// errBadRequest 返回 400 错误
+func errBadRequest(message string) *echo.HTTPError {
+	return echo.NewHTTPError(http.StatusBadRequest, message)
+}
+
+// errUnauthorized 返回 401 错误
+func errUnauthorized(message string) *echo.HTTPError {
+	return echo.NewHTTPError(http.StatusUnauthorized, message)
+}
+
+// errForbidden 返回 403 错误
+func errForbidden(message string) *echo.HTTPError {
+	return echo.NewHTTPError(http.StatusForbidden, message)
+}
+
+// errNotFound 返回 404 错误
+func errNotFound(message string) *echo.HTTPError {
+	return echo.NewHTTPError(http.StatusNotFound, message)
+}
+
+// errConflict 返回 409 错误
+func errConflict(message string) *echo.HTTPError {
+	return echo.NewHTTPError(http.StatusConflict, message)
+}
+
+// errInternal 返回 500 错误
+func errInternal(message string) *echo.HTTPError {
+	return echo.NewHTTPError(http.StatusInternalServerError, message)
+}
+
+// 常用错误消息常量
+const (
+	msgRequestFormatError  = "请求格式错误"
+	msgRequireAdminRole    = "需要管理员权限"
+	msgNoAccess            = "无权访问"
+	msgPasswordProcessFail = "密码处理失败"
+)

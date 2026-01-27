@@ -95,8 +95,8 @@ func (a *BankAPI) List(c echo.Context) error {
 
 		// 添加下次任务信息
 		if task, exists := nextTaskMap[bank.ID]; exists {
-			execDate := task.ExecDate.Format("2006-01-02")
-			execTime := task.ExecDate.Format("15:04")
+			execDate := task.ExecDate.Format(dateLayout)
+			execTime := task.ExecDate.Format(timeLayout)
 			toBankName := ""
 			if task.ToBank != nil {
 				toBankName = task.ToBank.Name
@@ -125,25 +125,24 @@ func (a *BankAPI) Create(c echo.Context) error {
 
 	var req CreateBankRequest
 	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "请求格式错误")
+		return errBadRequest(msgRequestFormatError)
 	}
 
 	// 验证名称
-	req.Name = strings.TrimSpace(req.Name)
-	if req.Name == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "银行名称不能为空")
+	name, err := validateName(req.Name, "银行名称")
+	if err != nil {
+		return err
 	}
+	req.Name = name
 
 	// 设置默认值
 	if req.AmountMin <= 0 {
-		req.AmountMin = 10
+		req.AmountMin = DefaultBankAmountMin
 	}
 	if req.AmountMax <= 0 {
-		req.AmountMax = 100
+		req.AmountMax = DefaultBankAmountMax
 	}
-	if req.AmountMin > req.AmountMax {
-		req.AmountMin, req.AmountMax = req.AmountMax, req.AmountMin
-	}
+	req.AmountMin, req.AmountMax = normalizeAmountRange(req.AmountMin, req.AmountMax)
 
 	bank := &model.Bank{
 		ID:         uuid.New().String(),
@@ -174,7 +173,7 @@ func (a *BankAPI) Get(c echo.Context) error {
 	}
 
 	if bank.UserID != userID {
-		return echo.NewHTTPError(http.StatusForbidden, "无权访问")
+		return errForbidden(msgNoAccess)
 	}
 
 	return c.JSON(http.StatusOK, toBankResponse(bank))
@@ -191,24 +190,24 @@ func (a *BankAPI) Update(c echo.Context) error {
 	}
 
 	if bank.UserID != userID {
-		return echo.NewHTTPError(http.StatusForbidden, "无权访问")
+		return errForbidden(msgNoAccess)
 	}
 
 	var req UpdateBankRequest
 	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "请求格式错误")
+		return errBadRequest(msgRequestFormatError)
 	}
 
 	// 验证名称
-	req.Name = strings.TrimSpace(req.Name)
-	if req.Name == "" {
-		return echo.NewHTTPError(http.StatusBadRequest, "银行名称不能为空")
+	name, err := validateName(req.Name, "银行名称")
+	if err != nil {
+		return err
 	}
+	req.Name = name
 
 	// 更新字段
 	bank.Name = req.Name
-	bank.AmountMin = req.AmountMin
-	bank.AmountMax = req.AmountMax
+	bank.AmountMin, bank.AmountMax = normalizeAmountRange(req.AmountMin, req.AmountMax)
 	bank.StrategyID = req.StrategyID
 	bank.GroupName = req.GroupName
 	bank.IsActive = req.IsActive
@@ -231,7 +230,7 @@ func (a *BankAPI) Delete(c echo.Context) error {
 	}
 
 	if bank.UserID != userID {
-		return echo.NewHTTPError(http.StatusForbidden, "无权访问")
+		return errForbidden(msgNoAccess)
 	}
 
 	if err := a.store.DeleteBank(bankID); err != nil {
