@@ -21,7 +21,7 @@ func TestNotificationList_Success(t *testing.T) {
 		Type:      model.NotificationTypeBark,
 		IsEnabled: true,
 	}
-	notification.SetConfig(map[string]interface{}{
+	_ = notification.SetConfig(map[string]interface{}{
 		"device_key": "test-key",
 	})
 	if err := env.store.CreateNotification(notification); err != nil {

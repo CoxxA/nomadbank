@@ -28,7 +28,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-package-lock.json
+# 前端 package-lock 不提交（使用 npm ci 从 package.json 安装）
+frontend/package-lock.json
+# E2E 测试需要 package-lock.json
+!e2e/package-lock.json
 
 # ==========================================
 # 环境变量

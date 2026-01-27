@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -121,26 +120,5 @@ func assertStatus(t *testing.T, got, want int) {
 	t.Helper()
 	if got != want {
 		t.Errorf("status = %d, want %d", got, want)
-	}
-}
-
-// assertJSON 断言 JSON 响应
-func assertJSON(t *testing.T, body []byte, key string, want interface{}) {
-	t.Helper()
-	var data map[string]interface{}
-	if err := json.Unmarshal(body, &data); err != nil {
-		t.Fatalf("unmarshal json: %v", err)
-	}
-	got := data[key]
-	if got != want {
-		t.Errorf("json[%q] = %v, want %v", key, got, want)
-	}
-}
-
-// assertContains 断言字符串包含
-func assertContains(t *testing.T, s, substr string) {
-	t.Helper()
-	if !strings.Contains(s, substr) {
-		t.Errorf("string %q does not contain %q", s, substr)
 	}
 }
