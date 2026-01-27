@@ -25,6 +25,7 @@ import {
   YAxis,
 } from 'recharts'
 import { toast } from 'sonner'
+import { handleApiError } from '@/lib/handle-server-error'
 import { CalendarView } from '@/components/calendar-view'
 import { Main } from '@/components/layout/main'
 import { Badge } from '@/components/ui/badge'
@@ -261,8 +262,8 @@ export function Dashboard() {
       } else {
         toast.info(result.message)
       }
-    } catch {
-      toast.error('发送提醒失败')
+    } catch (error) {
+      handleApiError(error, '发送提醒失败')
     } finally {
       setSendingReminder(false)
     }
@@ -278,8 +279,8 @@ export function Dashboard() {
       const result = await tasksApi.batchCompleteToday()
       toast.success(result.message)
       refreshTasks()
-    } catch {
-      toast.error('操作失败')
+    } catch (error) {
+      handleApiError(error, '操作失败')
     } finally {
       setCompletingAll(false)
     }
@@ -298,8 +299,8 @@ export function Dashboard() {
       })
       toast.success(result.message)
       refreshTasks()
-    } catch {
-      toast.error('操作失败')
+    } catch (error) {
+      handleApiError(error, '操作失败')
     } finally {
       setPostponing(false)
     }

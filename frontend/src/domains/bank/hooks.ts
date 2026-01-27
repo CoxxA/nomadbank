@@ -4,14 +4,6 @@ import type { BankListParams, BankWithNextTask } from './types'
 import type { PagedResult } from '@/lib/types'
 import { queryKeys } from '@/hooks/use-queries'
 
-/** 获取银行列表 */
-export function useBanks(params?: BankListParams) {
-  return useQuery<PagedResult<BankWithNextTask>>({
-    queryKey: queryKeys.banks(params),
-    queryFn: () => banksApi.list(params),
-  })
-}
-
 /** 获取银行列表（含下一个任务） */
 export function useBanksWithNextTasks(params?: BankListParams) {
   return useQuery<PagedResult<BankWithNextTask>>({

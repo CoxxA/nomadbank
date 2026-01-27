@@ -16,6 +16,7 @@ import {
   Upload,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { handleApiError } from '@/lib/handle-server-error'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -146,8 +147,8 @@ export function Accounts() {
       await banksApi.delete(bank.id)
       toast.success('删除成功')
       refreshBanks()
-    } catch {
-      toast.error('删除失败')
+    } catch (error) {
+      handleApiError(error, '删除失败')
     }
   }
 
@@ -183,8 +184,8 @@ export function Accounts() {
       toast.success(result.message)
       setSelectedBanks(new Set())
       refreshBanks()
-    } catch {
-      toast.error('删除失败')
+    } catch (error) {
+      handleApiError(error, '删除失败')
     } finally {
       setDeleting(false)
     }
@@ -214,8 +215,8 @@ export function Accounts() {
       setSelectedBanks(new Set())
       setMoveGroupDialogOpen(false)
       refreshBanks()
-    } catch {
-      toast.error('移动分组失败')
+    } catch (error) {
+      handleApiError(error, '移动分组失败')
     } finally {
       setMovingGroup(false)
     }
@@ -262,8 +263,8 @@ export function Accounts() {
       }
       setDialogOpen(false)
       refreshBanks()
-    } catch {
-      toast.error(editingBank ? '更新失败' : '添加失败')
+    } catch (error) {
+      handleApiError(error, editingBank ? '更新失败' : '添加失败')
     } finally {
       setSubmitting(false)
     }
@@ -285,8 +286,8 @@ export function Accounts() {
         toast.success(`导入成功: ${result.success_count} 条记录`)
       }
       refreshBanks()
-    } catch {
-      toast.error('导入失败')
+    } catch (error) {
+      handleApiError(error, '导入失败')
     } finally {
       setImporting(false)
       // 重置 file input

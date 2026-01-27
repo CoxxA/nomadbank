@@ -12,8 +12,6 @@ import type { PagedResult } from '@/lib/types'
 
 /** 银行 API */
 export const banksApi = {
-  list: (params?: BankListParams) =>
-    api.get<PagedResult<BankWithNextTask>>('/api/v1/banks', toParams(params)),
   listWithNextTasks: (params?: BankListParams) =>
     api.get<PagedResult<BankWithNextTask>>('/api/v1/banks', toParams(params)),
   getGroups: () => api.get<{ groups: string[] }>('/api/v1/banks/groups'),

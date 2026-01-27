@@ -21,12 +21,14 @@ import type { TaskListParams } from '@/domains/task/types'
 export const queryKeys = {
   // 统计
   dashboard: ['dashboard'] as const,
+  recentBase: ['recent'] as const,
   recent: (limit: number) => ['recent', limit] as const,
   nextDayTasks: ['nextDayTasks'] as const,
   calendar: (startDate: string, endDate: string) =>
     ['calendar', startDate, endDate] as const,
   todayTasks: ['todayTasks'] as const,
   // 银行
+  banksBase: ['banks'] as const,
   banks: (params?: BankListParams) =>
     [
       'banks',
@@ -36,6 +38,7 @@ export const queryKeys = {
       params?.group ?? '',
       params?.q ?? '',
     ] as const,
+  banksWithTasksBase: ['banksWithTasks'] as const,
   banksWithTasks: (params?: BankListParams) =>
     [
       'banksWithTasks',
@@ -47,6 +50,7 @@ export const queryKeys = {
     ] as const,
   bankGroups: ['bankGroups'] as const,
   // 任务
+  tasksBase: ['tasks'] as const,
   tasks: (params?: TaskListParams) =>
     [
       'tasks',
@@ -57,6 +61,7 @@ export const queryKeys = {
       params?.group ?? '',
       params?.q ?? '',
     ] as const,
+  allTasksBase: ['tasksAll'] as const,
   allTasks: (params?: TaskListParams) =>
     [
       'tasksAll',
@@ -132,29 +137,29 @@ export function useRefreshQueries() {
     /** 刷新所有统计数据 */
     refreshStats: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard })
-      queryClient.invalidateQueries({ queryKey: ['recent'] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.recentBase })
       queryClient.invalidateQueries({ queryKey: queryKeys.nextDayTasks })
       queryClient.invalidateQueries({ queryKey: queryKeys.todayTasks })
     },
 
     /** 刷新银行数据 */
     refreshBanks: () => {
-      queryClient.invalidateQueries({ queryKey: ['banks'] })
-      queryClient.invalidateQueries({ queryKey: ['banksWithTasks'] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.banksBase })
+      queryClient.invalidateQueries({ queryKey: queryKeys.banksWithTasksBase })
       queryClient.invalidateQueries({ queryKey: queryKeys.bankGroups })
     },
 
     /** 刷新任务数据（同时刷新统计和银行下次任务信息） */
     refreshTasks: () => {
       // 强制立即重新获取任务列表
-      queryClient.refetchQueries({ queryKey: ['tasks'] })
-      queryClient.refetchQueries({ queryKey: ['tasksAll'] })
+      queryClient.refetchQueries({ queryKey: queryKeys.tasksBase })
+      queryClient.refetchQueries({ queryKey: queryKeys.allTasksBase })
       queryClient.refetchQueries({ queryKey: queryKeys.taskCycles })
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard })
-      queryClient.invalidateQueries({ queryKey: ['recent'] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.recentBase })
       queryClient.invalidateQueries({ queryKey: queryKeys.todayTasks })
       // 任务变化会影响银行的下次任务信息，强制立即重新获取
-      queryClient.refetchQueries({ queryKey: ['banksWithTasks'] })
+      queryClient.refetchQueries({ queryKey: queryKeys.banksWithTasksBase })
     },
 
     /** 刷新策略数据 */

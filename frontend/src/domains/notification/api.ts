@@ -11,17 +11,11 @@ import type { TodayTasksResponse } from '@/lib/types'
 /** 通知 API */
 export const notificationsApi = {
   listChannels: () => api.get<NotificationChannel[]>('/api/v1/notifications'),
-  list: () => api.get<NotificationChannel[]>('/api/v1/notifications'),
   createChannel: (data: CreateChannelRequest) =>
-    api.post<NotificationChannel>('/api/v1/notifications', data),
-  create: (data: CreateChannelRequest) =>
     api.post<NotificationChannel>('/api/v1/notifications', data),
   updateChannel: (id: string, data: UpdateChannelRequest) =>
     api.put<NotificationChannel>(`/api/v1/notifications/${id}`, data),
-  update: (id: string, data: UpdateChannelRequest) =>
-    api.put<NotificationChannel>(`/api/v1/notifications/${id}`, data),
   deleteChannel: (id: string) => api.delete(`/api/v1/notifications/${id}`),
-  delete: (id: string) => api.delete(`/api/v1/notifications/${id}`),
   test: (channelId: string, message?: string) =>
     api.post(`/api/v1/notifications/${channelId}/test`, { message }),
   sendDailyReminder: async () => {

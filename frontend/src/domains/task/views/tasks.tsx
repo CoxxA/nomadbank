@@ -20,6 +20,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { handleApiError } from '@/lib/handle-server-error'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -159,8 +160,8 @@ export function Tasks() {
       setCompleteDialogOpen(false)
       setCompletingTask(null)
       refreshTasks()
-    } catch {
-      toast.error('操作失败')
+    } catch (error) {
+      handleApiError(error, '操作失败')
     } finally {
       setCompleting(false)
     }
@@ -172,8 +173,8 @@ export function Tasks() {
       await tasksApi.complete(task.id)
       toast.success('任务已完成')
       refreshTasks()
-    } catch {
-      toast.error('操作失败')
+    } catch (error) {
+      handleApiError(error, '操作失败')
     }
   }
 
@@ -183,8 +184,8 @@ export function Tasks() {
       await tasksApi.skip(task.id)
       toast.success('任务已跳过')
       refreshTasks()
-    } catch {
-      toast.error('操作失败')
+    } catch (error) {
+      handleApiError(error, '操作失败')
     }
   }
 
@@ -196,8 +197,8 @@ export function Tasks() {
       await tasksApi.delete(task.id)
       toast.success('任务已删除')
       refreshTasks()
-    } catch {
-      toast.error('删除失败')
+    } catch (error) {
+      handleApiError(error, '删除失败')
     }
   }
 
@@ -239,8 +240,8 @@ export function Tasks() {
       toast.success(result.message)
       setSelectedTasks(new Set())
       refreshTasks()
-    } catch {
-      toast.error('删除失败')
+    } catch (error) {
+      handleApiError(error, '删除失败')
     } finally {
       setDeleting(false)
     }
