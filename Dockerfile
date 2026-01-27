@@ -8,7 +8,7 @@ COPY frontend/ ./
 RUN npm run build -- --outDir dist
 
 # 阶段 2: 构建 Go 后端
-FROM golang:1.24-alpine AS backend
+FROM golang:1.25-alpine AS backend
 RUN apk add --no-cache gcc musl-dev
 WORKDIR /app
 COPY go.mod ./
