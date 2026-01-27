@@ -208,8 +208,8 @@ export function CalendarView({
             className={cn(
               'text-center font-medium',
               isCompact
-                ? 'py-0 text-[10px] text-muted-foreground/60'
-                : 'py-0.5 text-xs text-muted-foreground'
+                ? 'text-muted-foreground/60 py-0 text-[10px]'
+                : 'text-muted-foreground py-0.5 text-xs'
             )}
           >
             {day}

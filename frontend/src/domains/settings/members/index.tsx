@@ -49,8 +49,8 @@ import {
 } from '@/components/ui/table'
 import { PasswordInput } from '@/components/password-input'
 import { usersApi } from '@/lib/api'
-import { parseDateKey } from '@/lib/utils'
 import type { User, UserRole } from '@/lib/types'
+import { parseDateKey } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 import { ContentSection } from '../components/content-section'
 
@@ -269,7 +269,9 @@ export function SettingsMembers() {
                     </TableCell>
                     <TableCell>
                       {user.created_at
-                        ? parseDateKey(user.created_at).toLocaleDateString('zh-CN')
+                        ? parseDateKey(user.created_at).toLocaleDateString(
+                            'zh-CN'
+                          )
                         : '-'}
                     </TableCell>
                     <TableCell className='text-right'>

@@ -1,4 +1,5 @@
 import { api } from '@/lib/api-client'
+import type { TodayTasksResponse } from '@/lib/types'
 import { getDateKey } from '@/lib/utils'
 import { tasksApi } from '@/domains/task/api'
 import type {
@@ -6,7 +7,6 @@ import type {
   NotificationChannel,
   UpdateChannelRequest,
 } from './types'
-import type { TodayTasksResponse } from '@/lib/types'
 
 /** 通知 API */
 export const notificationsApi = {
@@ -36,7 +36,8 @@ export const notificationsApi = {
         status: t.status,
       })),
       pending_count: todayTasks.filter((t) => t.status === 'pending').length,
-      completed_count: todayTasks.filter((t) => t.status === 'completed').length,
+      completed_count: todayTasks.filter((t) => t.status === 'completed')
+        .length,
     }
   },
 }

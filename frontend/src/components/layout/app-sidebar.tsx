@@ -7,9 +7,9 @@ import {
 } from '@/components/ui/sidebar'
 import { useAuthStore } from '@/stores/auth-store'
 import { useLayout } from '@/context/layout-provider'
-import { sidebarData } from './sidebar-data'
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
+import { sidebarData } from './sidebar-data'
 import { TeamSwitcher } from './team-switcher'
 
 export function AppSidebar() {

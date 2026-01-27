@@ -2,6 +2,8 @@
  * API 客户端
  * 用于与 Go 后端通信
  */
+import { tasksApi } from '@/domains/task/api'
+import { ApiError, api } from './api-client'
 import type {
   CalendarDay,
   ChangePasswordRequest,
@@ -21,8 +23,6 @@ import type {
   Webhook,
   WebhookLog,
 } from './types'
-import { tasksApi } from '@/domains/task/api'
-import { ApiError, api } from './api-client'
 import { getDateKey, parseDateKey } from './utils'
 
 // 重新导出所有类型
@@ -51,10 +51,7 @@ export const statsApi = {
     }
     const completed = tasks
       .filter((t) => t.status === 'completed')
-      .sort(
-        (a, b) =>
-          getSortValue(b) - getSortValue(a)
-      )
+      .sort((a, b) => getSortValue(b) - getSortValue(a))
       .slice(0, limit || 5)
     return completed.map((t) => ({
       id: t.id,
@@ -70,14 +67,19 @@ export const statsApi = {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const pending = tasks
-      .filter((t) => t.status === 'pending' && parseDateKey(t.exec_date) > today)
+      .filter(
+        (t) => t.status === 'pending' && parseDateKey(t.exec_date) > today
+      )
       .sort(
         (a, b) =>
-          parseDateKey(a.exec_date).getTime() - parseDateKey(b.exec_date).getTime()
+          parseDateKey(a.exec_date).getTime() -
+          parseDateKey(b.exec_date).getTime()
       )
     if (pending.length === 0) return null
     const nextDate = getDateKey(pending[0].exec_date)
-    const nextTasks = pending.filter((t) => getDateKey(t.exec_date) === nextDate)
+    const nextTasks = pending.filter(
+      (t) => getDateKey(t.exec_date) === nextDate
+    )
     const daysUntil = Math.ceil(
       (parseDateKey(nextDate).getTime() - today.getTime()) /
         (1000 * 60 * 60 * 24)
@@ -113,7 +115,6 @@ export const statsApi = {
     return result
   },
 }
-
 
 /** 导入导出 API */
 export const importExportApi = {

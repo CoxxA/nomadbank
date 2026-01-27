@@ -73,7 +73,9 @@ export function toParams<T extends object>(
 ): Record<string, string> | undefined {
   if (!params) return undefined
   const result: Record<string, string> = {}
-  for (const [key, value] of Object.entries(params as Record<string, unknown>)) {
+  for (const [key, value] of Object.entries(
+    params as Record<string, unknown>
+  )) {
     if (value === undefined || value === null || value === '') continue
     result[key] = String(value)
   }

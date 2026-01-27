@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
+import { queryKeys } from '@/hooks/use-queries'
+import type { PagedResult } from '@/lib/types'
 import { tasksApi } from './api'
 import type { Task, TaskListParams } from './types'
-import type { PagedResult } from '@/lib/types'
-import { queryKeys } from '@/hooks/use-queries'
 
 /** 获取任务列表 */
 export function useTasks(params?: TaskListParams) {

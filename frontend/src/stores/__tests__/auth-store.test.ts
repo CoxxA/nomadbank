@@ -1,6 +1,6 @@
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest'
-import { useAuthStore } from '../auth-store'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as cookies from '@/lib/cookies'
+import { useAuthStore } from '../auth-store'
 
 // Mock cookies 模块
 vi.mock('@/lib/cookies', () => ({
@@ -131,7 +131,9 @@ describe('auth-store', () => {
       })
 
       const { auth } = useAuthStore.getState()
-      await expect(auth.signIn('wrong', 'wrong')).rejects.toThrow('用户名或密码错误')
+      await expect(auth.signIn('wrong', 'wrong')).rejects.toThrow(
+        '用户名或密码错误'
+      )
     })
   })
 
@@ -155,7 +157,9 @@ describe('auth-store', () => {
       const state = useAuthStore.getState()
       expect(state.auth.user).toBeNull()
       expect(state.auth.accessToken).toBe('')
-      expect(cookies.removeCookie).toHaveBeenCalledWith('nomad-bank-access-token')
+      expect(cookies.removeCookie).toHaveBeenCalledWith(
+        'nomad-bank-access-token'
+      )
     })
   })
 

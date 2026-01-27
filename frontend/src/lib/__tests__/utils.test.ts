@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cn, getPageNumbers, getDateKey, parseDateKey } from '../utils'
+import { cn, getDateKey, getPageNumbers, parseDateKey } from '../utils'
 
 describe('cn', () => {
   it('合并类名', () => {
@@ -9,7 +9,9 @@ describe('cn', () => {
   it('处理条件类名', () => {
     const isActive = true
     const isDisabled = false
-    expect(cn('base', isActive && 'active', isDisabled && 'disabled')).toBe('base active')
+    expect(cn('base', isActive && 'active', isDisabled && 'disabled')).toBe(
+      'base active'
+    )
   })
 
   it('合并 Tailwind 类并处理冲突', () => {

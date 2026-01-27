@@ -1,5 +1,5 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest'
-import { getCookie, setCookie, removeCookie } from '../cookies'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { getCookie, removeCookie, setCookie } from '../cookies'
 
 describe('cookies', () => {
   beforeEach(() => {

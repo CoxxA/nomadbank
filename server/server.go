@@ -24,7 +24,22 @@ func New(cfg *config.Config, store *store.Store) *Server {
 	e.HTTPErrorHandler = NewHTTPErrorHandler(cfg)
 
 	// 全局中间件
-	e.Use(echoMiddleware.Logger())
+	e.Use(echoMiddleware.RequestLoggerWithConfig(echoMiddleware.RequestLoggerConfig{
+		LogStatus:   true,
+		LogURI:      true,
+		LogMethod:   true,
+		LogLatency:  true,
+		LogError:    true,
+		HandleError: true,
+		LogValuesFunc: func(c echo.Context, v echoMiddleware.RequestLoggerValues) error {
+			if v.Error != nil {
+				c.Logger().Errorf("%s %s %d %v %v", v.Method, v.URI, v.Status, v.Latency, v.Error)
+			} else {
+				c.Logger().Infof("%s %s %d %v", v.Method, v.URI, v.Status, v.Latency)
+			}
+			return nil
+		},
+	}))
 	e.Use(echoMiddleware.Recover())
 	e.Use(echoMiddleware.BodyLimit("1M")) // 限制请求体大小为 1MB
 

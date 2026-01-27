@@ -21,8 +21,16 @@
 
   .dark body {
     background-image:
-      radial-gradient(1200px 800px at 10% -10%, rgba(56, 189, 248, 0.12), transparent 60%),
-      radial-gradient(900px 600px at 90% 0%, rgba(245, 158, 11, 0.08), transparent 55%),
+      radial-gradient(
+        1200px 800px at 10% -10%,
+        rgba(56, 189, 248, 0.12),
+        transparent 60%
+      ),
+      radial-gradient(
+        900px 600px at 90% 0%,
+        rgba(245, 158, 11, 0.08),
+        transparent 55%
+      ),
       linear-gradient(180deg, rgba(11, 16, 32, 0.95), rgba(15, 23, 42, 0.95));
     background-attachment: fixed;
     background-size: cover;
@@ -51,7 +59,7 @@
 
 @layer components {
   .glass-card {
-    @apply border border-border/50 bg-white/80 backdrop-blur;
+    @apply border-border/50 border bg-white/80 backdrop-blur;
     border-color: var(--glass-border);
     box-shadow: var(--glass-shadow);
   }

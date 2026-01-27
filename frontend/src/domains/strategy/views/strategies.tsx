@@ -29,11 +29,11 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { PageHeader } from '@/components/page/page-header'
 import { Main } from '@/components/layout/main'
-import { useStrategies } from '@/domains/strategy/hooks'
-import { strategiesApi } from '@/domains/strategy/api'
+import { PageHeader } from '@/components/page/page-header'
 import { useRefreshQueries } from '@/hooks/use-queries'
+import { strategiesApi } from '@/domains/strategy/api'
+import { useStrategies } from '@/domains/strategy/hooks'
 import type { CreateStrategyRequest, Strategy } from '@/domains/strategy/types'
 
 export function Strategies() {

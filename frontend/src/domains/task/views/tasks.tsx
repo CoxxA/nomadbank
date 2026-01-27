@@ -20,7 +20,6 @@ import {
   XCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { handleApiError } from '@/lib/handle-server-error'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -47,12 +46,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -71,14 +64,21 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
-import { PageHeader } from '@/components/page/page-header'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { Main } from '@/components/layout/main'
+import { PageHeader } from '@/components/page/page-header'
+import { useRefreshQueries } from '@/hooks/use-queries'
+import { handleApiError } from '@/lib/handle-server-error'
+import { parseDateKey } from '@/lib/utils'
 import { useBankGroups } from '@/domains/bank/hooks'
-import { useTaskCycles, useTasks } from '@/domains/task/hooks'
 import { useStrategies } from '@/domains/strategy/hooks'
 import { tasksApi } from '@/domains/task/api'
-import { useRefreshQueries } from '@/hooks/use-queries'
-import { parseDateKey } from '@/lib/utils'
+import { useTaskCycles, useTasks } from '@/domains/task/hooks'
 import type { CompleteTaskRequest, Task } from '@/domains/task/types'
 
 export function Tasks() {
@@ -658,21 +658,18 @@ export function Tasks() {
                 <div className='flex flex-col gap-3 lg:flex-row lg:items-center'>
                   <div className='relative w-full lg:w-72'>
                     <SearchIcon className='text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4' />
-                  <Input
-                    placeholder='搜索银行、备注、金额...'
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className='w-full pl-8'
-                  />
-                </div>
-                <Select
-                  value={statusFilter}
-                  onValueChange={setStatusFilter}
-                >
-                  <SelectTrigger className='w-full lg:w-36'>
-                    <Filter className='mr-2 h-4 w-4' />
-                    <SelectValue placeholder='状态' />
-                  </SelectTrigger>
+                    <Input
+                      placeholder='搜索银行、备注、金额...'
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className='w-full pl-8'
+                    />
+                  </div>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className='w-full lg:w-36'>
+                      <Filter className='mr-2 h-4 w-4' />
+                      <SelectValue placeholder='状态' />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value='all'>全部状态</SelectItem>
                       <SelectItem value='pending'>待执行</SelectItem>
@@ -680,13 +677,10 @@ export function Tasks() {
                       <SelectItem value='skipped'>已跳过</SelectItem>
                     </SelectContent>
                   </Select>
-                <Select
-                  value={cycleFilter}
-                  onValueChange={setCycleFilter}
-                >
-                  <SelectTrigger className='w-full lg:w-36'>
-                    <SelectValue placeholder='周期' />
-                  </SelectTrigger>
+                  <Select value={cycleFilter} onValueChange={setCycleFilter}>
+                    <SelectTrigger className='w-full lg:w-36'>
+                      <SelectValue placeholder='周期' />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value='all'>全部周期</SelectItem>
                       {cycles.map((cycle) => (
@@ -696,13 +690,10 @@ export function Tasks() {
                       ))}
                     </SelectContent>
                   </Select>
-                <Select
-                  value={groupFilter}
-                  onValueChange={setGroupFilter}
-                >
-                  <SelectTrigger className='w-full lg:w-44'>
-                    <SelectValue placeholder='分组' />
-                  </SelectTrigger>
+                  <Select value={groupFilter} onValueChange={setGroupFilter}>
+                    <SelectTrigger className='w-full lg:w-44'>
+                      <SelectValue placeholder='分组' />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value='all'>全部分组</SelectItem>
                       <SelectItem value='ungrouped'>未分组</SelectItem>
@@ -716,7 +707,7 @@ export function Tasks() {
                 </div>
 
                 {selectedTasks.size > 0 && (
-                  <div className='flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-sm'>
+                  <div className='bg-muted/40 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 text-sm'>
                     <Badge variant='default' className='rounded-lg'>
                       {selectedTasks.size}
                     </Badge>
@@ -842,7 +833,7 @@ export function Tasks() {
                           </TableCell>
                           <TableCell>{getStatusBadge(task.status)}</TableCell>
                           <TableCell className='text-right'>
-                            <div className='inline-flex items-center gap-0 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100'>
+                            <div className='inline-flex items-center gap-0 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100'>
                               {task.status === 'pending' ? (
                                 <TooltipProvider delayDuration={0}>
                                   <Tooltip>
@@ -851,7 +842,9 @@ export function Tasks() {
                                         variant='ghost'
                                         size='icon'
                                         className='h-8 w-8 text-green-600 hover:bg-green-50 hover:text-green-700 dark:hover:bg-green-950'
-                                        onClick={() => handleQuickComplete(task)}
+                                        onClick={() =>
+                                          handleQuickComplete(task)
+                                        }
                                       >
                                         <CheckCircle2 className='h-4 w-4' />
                                       </Button>

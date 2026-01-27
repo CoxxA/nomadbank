@@ -77,7 +77,11 @@
       "Bash(gh run list:*)",
       "Bash(gh run view:*)",
       "Bash(npm run lint)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: 修复 CI 流水线错误\n\n- 后端测试/lint: 创建 web/dist 占位目录解决 go:embed 问题\n- 前端 lint: 修复未使用变量和常量表达式警告\n- 前端 lint: 添加 eslint-disable 注释处理开发环境 console\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: 修复 CI 流水线错误\n\n- 后端测试/lint: 创建 web/dist 占位目录解决 go:embed 问题\n- 前端 lint: 修复未使用变量和常量表达式警告\n- 前端 lint: 添加 eslint-disable 注释处理开发环境 console\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(gofmt:*)",
+      "Bash(npm run format:*)",
+      "Bash(golangci-lint run:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: 修复 CI lint 错误\n\n后端:\n- 修复 gofmt 格式问题\n- 移除未使用的错误辅助函数和类型\n- 修复 resp.Body.Close\\(\\) 返回值未检查\n- 替换废弃的 Logger 中间件为 RequestLogger\n\n前端:\n- 运行 prettier 格式化代码\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

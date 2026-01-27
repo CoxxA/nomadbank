@@ -16,7 +16,6 @@ import {
   Upload,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { handleApiError } from '@/lib/handle-server-error'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -61,13 +60,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { PageHeader } from '@/components/page/page-header'
 import { Main } from '@/components/layout/main'
-import { useBankGroups, useBanksWithNextTasks } from '@/domains/bank/hooks'
-import { banksApi } from '@/domains/bank/api'
+import { PageHeader } from '@/components/page/page-header'
 import { useRefreshQueries } from '@/hooks/use-queries'
 import { importExportApi } from '@/lib/api'
+import { handleApiError } from '@/lib/handle-server-error'
 import { parseDateKey } from '@/lib/utils'
+import { banksApi } from '@/domains/bank/api'
+import { useBankGroups, useBanksWithNextTasks } from '@/domains/bank/hooks'
 import type { BankWithNextTask, CreateBankRequest } from '@/domains/bank/types'
 
 export function Accounts() {
@@ -326,8 +326,7 @@ export function Accounts() {
     setCurrentPage(1)
   }, [searchQuery, statusFilter, groupFilter])
 
-  const isAllSelected =
-    banks.length > 0 && selectedBanks.size === banks.length
+  const isAllSelected = banks.length > 0 && selectedBanks.size === banks.length
 
   return (
     <>
@@ -432,7 +431,9 @@ export function Accounts() {
                           取消
                         </Button>
                         <Button type='submit' disabled={submitting}>
-                          {submitting && <Loader2 className='h-4 w-4 animate-spin' />}
+                          {submitting && (
+                            <Loader2 className='h-4 w-4 animate-spin' />
+                          )}
                           {editingBank ? '保存' : '添加'}
                         </Button>
                       </DialogFooter>
@@ -499,7 +500,7 @@ export function Accounts() {
               </div>
 
               {selectedBanks.size > 0 && (
-                <div className='flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-sm'>
+                <div className='bg-muted/40 flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 text-sm'>
                   <Badge variant='default' className='rounded-lg'>
                     {selectedBanks.size}
                   </Badge>
@@ -754,7 +755,9 @@ export function Accounts() {
                     emptyText='无匹配分组，可直接输入新分组名'
                     allowCustom={true}
                   />
-                  <p className='text-muted-foreground text-xs'>留空则移除分组</p>
+                  <p className='text-muted-foreground text-xs'>
+                    留空则移除分组
+                  </p>
                 </div>
               </div>
               <DialogFooter>

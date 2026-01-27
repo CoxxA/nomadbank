@@ -16,7 +16,6 @@ import {
   XCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { handleApiError } from '@/lib/handle-server-error'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -47,14 +46,15 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { PageHeader } from '@/components/page/page-header'
 import { Main } from '@/components/layout/main'
-import { useNotificationChannels } from '@/domains/notification/hooks'
-import { notificationsApi } from '@/domains/notification/api'
+import { PageHeader } from '@/components/page/page-header'
 import { useRefreshQueries, useWebhooks } from '@/hooks/use-queries'
 import { webhooksApi } from '@/lib/api'
-import { parseDateKey } from '@/lib/utils'
+import { handleApiError } from '@/lib/handle-server-error'
 import type { CreateWebhookRequest, Webhook } from '@/lib/types'
+import { parseDateKey } from '@/lib/utils'
+import { notificationsApi } from '@/domains/notification/api'
+import { useNotificationChannels } from '@/domains/notification/hooks'
 import type {
   CreateChannelRequest,
   NotificationChannel,
@@ -522,9 +522,7 @@ export function Notifications() {
             title='通知设置'
             description='管理任务通知渠道与 Webhook 配置'
             actions={
-              <>
-                {activeTab === 'channels' ? channelDialog : webhookDialog}
-              </>
+              <>{activeTab === 'channels' ? channelDialog : webhookDialog}</>
             }
           />
 
@@ -654,7 +652,9 @@ export function Notifications() {
                             </div>
                             <Switch
                               checked={webhook.is_enabled}
-                              onCheckedChange={() => handleToggleWebhook(webhook)}
+                              onCheckedChange={() =>
+                                handleToggleWebhook(webhook)
+                              }
                             />
                           </CardHeader>
                           <CardContent className='space-y-3'>

@@ -9,9 +9,7 @@ it('renders title and description', () => {
 })
 
 it('renders actions when provided', () => {
-  render(
-    <PageHeader title='任务管理' actions={<button>新增</button>} />
-  )
+  render(<PageHeader title='任务管理' actions={<button>新增</button>} />)
 
   expect(screen.getByRole('button', { name: '新增' })).toBeInTheDocument()
 })

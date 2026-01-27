@@ -1,4 +1,5 @@
 import { api, toParams } from '@/lib/api'
+import type { PagedResult } from '@/lib/types'
 import type {
   Bank,
   BankBatchDeleteRequest,
@@ -8,7 +9,6 @@ import type {
   CreateBankRequest,
   UpdateBankRequest,
 } from './types'
-import type { PagedResult } from '@/lib/types'
 
 /** 银行 API */
 export const banksApi = {

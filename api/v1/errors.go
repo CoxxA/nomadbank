@@ -14,24 +14,9 @@ func errBadRequest(message string) *echo.HTTPError {
 	return echo.NewHTTPError(http.StatusBadRequest, message)
 }
 
-// errUnauthorized 返回 401 错误
-func errUnauthorized(message string) *echo.HTTPError {
-	return echo.NewHTTPError(http.StatusUnauthorized, message)
-}
-
 // errForbidden 返回 403 错误
 func errForbidden(message string) *echo.HTTPError {
 	return echo.NewHTTPError(http.StatusForbidden, message)
-}
-
-// errNotFound 返回 404 错误
-func errNotFound(message string) *echo.HTTPError {
-	return echo.NewHTTPError(http.StatusNotFound, message)
-}
-
-// errConflict 返回 409 错误
-func errConflict(message string) *echo.HTTPError {
-	return echo.NewHTTPError(http.StatusConflict, message)
 }
 
 // errInternal 返回 500 错误

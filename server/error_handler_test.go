@@ -11,12 +11,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type errorPayload struct {
-	Code    int         `json:"code"`
-	Message string      `json:"message"`
-	Details interface{} `json:"details,omitempty"`
-}
-
 func newTestContext() (echo.Context, *httptest.ResponseRecorder) {
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodGet, "/", nil)

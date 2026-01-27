@@ -1,6 +1,10 @@
 import * as React from 'react'
 import { Link } from '@tanstack/react-router'
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar'
+import {
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from '@/components/ui/sidebar'
 
 type TeamSwitcherProps = {
   teams: {

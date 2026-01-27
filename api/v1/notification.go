@@ -260,7 +260,7 @@ func sendBarkNotification(config map[string]interface{}, message string) error {
 	if err != nil {
 		return fmt.Errorf("发送 Bark 通知失败: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -299,7 +299,7 @@ func sendTelegramNotification(config map[string]interface{}, message string) err
 	if err != nil {
 		return fmt.Errorf("发送 Telegram 通知失败: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)

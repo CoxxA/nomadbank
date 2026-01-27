@@ -1,6 +1,6 @@
 import { api, toParams } from '@/lib/api-client'
-import { getDateKey, parseDateKey } from '@/lib/utils'
 import type { PagedResult } from '@/lib/types'
+import { getDateKey, parseDateKey } from '@/lib/utils'
 import type {
   BatchDeleteRequest,
   BatchPostponeRequest,
@@ -30,7 +30,10 @@ export const tasksApi = {
         })
       )
       items.push(...pageData.items)
-      if (items.length >= pageData.total || pageData.items.length < MAX_PAGE_SIZE) {
+      if (
+        items.length >= pageData.total ||
+        pageData.items.length < MAX_PAGE_SIZE
+      ) {
         break
       }
       page += 1
