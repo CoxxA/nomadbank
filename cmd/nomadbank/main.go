@@ -65,7 +65,7 @@ func main() {
 	srv := server.New(cfg, s)
 
 	// 注册 API 路由
-	srv.SetupRoutes()
+	srv.SetupRoutesWithVersion(version, commit)
 
 	// 注册前端静态文件
 	web.RegisterRoutes(srv.Echo())

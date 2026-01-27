@@ -1,0 +1,11 @@
+# 依赖
+node_modules/
+
+# Playwright
+playwright-report/
+test-results/
+playwright/.cache/
+
+# 环境变量
+.env
+.env.local

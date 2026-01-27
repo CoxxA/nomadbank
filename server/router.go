@@ -7,7 +7,18 @@ import (
 
 // SetupRoutes 配置路由
 func (s *Server) SetupRoutes() {
+	s.SetupRoutesWithVersion("dev", "unknown")
+}
+
+// SetupRoutesWithVersion 配置路由（带版本信息）
+func (s *Server) SetupRoutesWithVersion(version, commit string) {
 	e := s.echo
+
+	// 健康检查（无需认证，放在 /api 之外）
+	healthAPI := v1.NewHealthAPI(s.store, version, commit)
+	e.GET("/health", healthAPI.Health)
+	e.GET("/health/ready", healthAPI.Ready)
+	e.GET("/health/live", healthAPI.Live)
 
 	// API v1 路由组
 	apiV1 := e.Group("/api/v1")

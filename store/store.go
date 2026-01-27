@@ -16,6 +16,15 @@ func New(db *gorm.DB) *Store {
 	return &Store{db: db}
 }
 
+// Ping 检查数据库连接
+func (s *Store) Ping() error {
+	sqlDB, err := s.db.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Ping()
+}
+
 // ========== User 操作 ==========
 
 // CreateUser 创建用户
