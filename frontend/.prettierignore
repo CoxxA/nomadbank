@@ -1,0 +1,6 @@
+# 忽略自动生成的文件
+src/routeTree.gen.ts
+
+# 忽略构建输出
+dist/
+node_modules/

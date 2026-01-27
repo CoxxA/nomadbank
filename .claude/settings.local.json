@@ -81,7 +81,8 @@
       "Bash(gofmt:*)",
       "Bash(npm run format:*)",
       "Bash(golangci-lint run:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: 修复 CI lint 错误\n\n后端:\n- 修复 gofmt 格式问题\n- 移除未使用的错误辅助函数和类型\n- 修复 resp.Body.Close\\(\\) 返回值未检查\n- 替换废弃的 Logger 中间件为 RequestLogger\n\n前端:\n- 运行 prettier 格式化代码\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: 修复 CI lint 错误\n\n后端:\n- 修复 gofmt 格式问题\n- 移除未使用的错误辅助函数和类型\n- 修复 resp.Body.Close\\(\\) 返回值未检查\n- 替换废弃的 Logger 中间件为 RequestLogger\n\n前端:\n- 运行 prettier 格式化代码\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: 修复 CI 剩余错误\n\n- 添加 .prettierignore 忽略自动生成的 routeTree.gen.ts\n- 修复通知页面 TypeScript 类型错误\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

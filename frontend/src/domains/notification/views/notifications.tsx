@@ -56,8 +56,10 @@ import { parseDateKey } from '@/lib/utils'
 import { notificationsApi } from '@/domains/notification/api'
 import { useNotificationChannels } from '@/domains/notification/hooks'
 import type {
+  BarkConfig,
   CreateChannelRequest,
   NotificationChannel,
+  TelegramConfig,
 } from '@/domains/notification/types'
 
 // 支持的 webhook 事件类型
@@ -98,10 +100,14 @@ export function Notifications() {
     setSubmitting(true)
 
     try {
+      const config =
+        channelType === 'bark'
+          ? (formData as unknown as BarkConfig)
+          : (formData as unknown as TelegramConfig)
       const request: CreateChannelRequest = {
         name: channelType === 'bark' ? 'Bark 通知' : 'Telegram 通知',
         type: channelType,
-        config: formData,
+        config,
         is_enabled: true,
       }
       await notificationsApi.createChannel(request)
