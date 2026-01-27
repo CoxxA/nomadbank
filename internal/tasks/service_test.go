@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/CoxxA/nomadbank/store"
 	"github.com/CoxxA/nomadbank/store/model"
-	"github.com/google/uuid"
 )
 
 type fixedServiceRandomizer struct{}

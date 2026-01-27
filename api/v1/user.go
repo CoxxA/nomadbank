@@ -4,13 +4,14 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/CoxxA/nomadbank/server/middleware"
-	"github.com/CoxxA/nomadbank/store"
-	"github.com/CoxxA/nomadbank/store/model"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+
+	"github.com/CoxxA/nomadbank/server/middleware"
+	"github.com/CoxxA/nomadbank/store"
+	"github.com/CoxxA/nomadbank/store/model"
 )
 
 // UserAPI 用户管理 API

@@ -4,11 +4,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/CoxxA/nomadbank/store/model"
 	"github.com/glebarez/sqlite"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"github.com/CoxxA/nomadbank/store/model"
 )
 
 // 系统策略配置常量

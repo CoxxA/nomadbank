@@ -7,8 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/CoxxA/nomadbank/internal/config"
 	"github.com/labstack/echo/v4"
+
+	"github.com/CoxxA/nomadbank/internal/config"
 )
 
 func newTestContext() (echo.Context, *httptest.ResponseRecorder) {

@@ -3,8 +3,9 @@ package server
 import (
 	"net/http"
 
-	"github.com/CoxxA/nomadbank/internal/config"
 	"github.com/labstack/echo/v4"
+
+	"github.com/CoxxA/nomadbank/internal/config"
 )
 
 type errorResponse struct {

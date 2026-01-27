@@ -8,9 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/labstack/echo/v4"
+
 	"github.com/CoxxA/nomadbank/store"
 	"github.com/CoxxA/nomadbank/store/model"
-	"github.com/labstack/echo/v4"
 )
 
 func TestTaskListPagedShape(t *testing.T) {

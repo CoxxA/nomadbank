@@ -3,11 +3,12 @@ package v1
 import (
 	"net/http"
 
+	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
+
 	"github.com/CoxxA/nomadbank/server/middleware"
 	"github.com/CoxxA/nomadbank/store"
 	"github.com/CoxxA/nomadbank/store/model"
-	"github.com/google/uuid"
-	"github.com/labstack/echo/v4"
 )
 
 // StrategyAPI 策略 API

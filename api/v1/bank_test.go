@@ -7,9 +7,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/labstack/echo/v4"
+
 	"github.com/CoxxA/nomadbank/store"
 	"github.com/CoxxA/nomadbank/store/model"
-	"github.com/labstack/echo/v4"
 )
 
 func TestBankListDoesNotExposeTagsOrLastExec(t *testing.T) {

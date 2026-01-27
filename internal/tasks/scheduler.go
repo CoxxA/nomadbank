@@ -4,8 +4,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/CoxxA/nomadbank/store/model"
 	"github.com/google/uuid"
+
+	"github.com/CoxxA/nomadbank/store/model"
 )
 
 func ScheduleTasks(userID, groupName string, cycle int, pairs []transferPair, baseDate time.Time, strategy *model.Strategy, randomizer Randomizer) []model.TransferTask {

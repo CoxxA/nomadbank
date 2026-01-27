@@ -1,8 +1,9 @@
 package store
 
 import (
-	"github.com/CoxxA/nomadbank/store/model"
 	"gorm.io/gorm"
+
+	"github.com/CoxxA/nomadbank/store/model"
 )
 
 // Store 数据存储接口

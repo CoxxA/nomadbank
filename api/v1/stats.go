@@ -3,9 +3,10 @@ package v1
 import (
 	"net/http"
 
+	"github.com/labstack/echo/v4"
+
 	"github.com/CoxxA/nomadbank/server/middleware"
 	"github.com/CoxxA/nomadbank/store"
-	"github.com/labstack/echo/v4"
 )
 
 // StatsAPI 统计 API

@@ -3,11 +3,12 @@ package store
 import (
 	"testing"
 
-	"github.com/CoxxA/nomadbank/store/model"
 	"github.com/glebarez/sqlite"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"github.com/CoxxA/nomadbank/store/model"
 )
 
 // setupTestDB 创建内存测试数据库

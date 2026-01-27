@@ -3,11 +3,12 @@ package server
 import (
 	"fmt"
 
+	"github.com/labstack/echo/v4"
+	echoMiddleware "github.com/labstack/echo/v4/middleware"
+
 	"github.com/CoxxA/nomadbank/internal/config"
 	"github.com/CoxxA/nomadbank/server/middleware"
 	"github.com/CoxxA/nomadbank/store"
-	"github.com/labstack/echo/v4"
-	echoMiddleware "github.com/labstack/echo/v4/middleware"
 )
 
 // Server HTTP 服务器
