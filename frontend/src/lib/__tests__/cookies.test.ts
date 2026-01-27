@@ -2,17 +2,13 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 import { getCookie, setCookie, removeCookie } from '../cookies'
 
 describe('cookies', () => {
-  // 保存原始 cookie 以便清理
-  let originalCookie: string
-
   beforeEach(() => {
-    originalCookie = document.cookie
     // 清理测试 cookie
     document.cookie = 'test-cookie=; path=/; max-age=0'
   })
 
   afterEach(() => {
-    // 恢复
+    // 清理
     document.cookie = 'test-cookie=; path=/; max-age=0'
   })
 

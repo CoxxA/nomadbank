@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 export function handleApiError(error: unknown, defaultMessage = '操作失败') {
   // 开发环境打印错误
   if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
     console.error('[API Error]', error)
   }
 

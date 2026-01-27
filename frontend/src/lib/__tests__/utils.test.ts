@@ -7,7 +7,9 @@ describe('cn', () => {
   })
 
   it('处理条件类名', () => {
-    expect(cn('base', true && 'active', false && 'disabled')).toBe('base active')
+    const isActive = true
+    const isDisabled = false
+    expect(cn('base', isActive && 'active', isDisabled && 'disabled')).toBe('base active')
   })
 
   it('合并 Tailwind 类并处理冲突', () => {
