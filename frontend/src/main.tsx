@@ -1,107 +1,54 @@
-import { StrictMode } from 'react'
-import ReactDOM from 'react-dom/client'
-import {
-  QueryCache,
-  QueryClient,
-  QueryClientProvider,
-} from '@tanstack/react-query'
-import { RouterProvider, createRouter } from '@tanstack/react-router'
-import { toast } from 'sonner'
-import { ApiError } from '@/lib/api-client'
-import { handleServerError } from '@/lib/handle-server-error'
-import { useAuthStore } from '@/stores/auth-store'
-import { DirectionProvider } from './context/direction-provider'
-import { FontProvider } from './context/font-provider'
-import { ThemeProvider } from './context/theme-provider'
-// Generated Routes
-import { routeTree } from './routeTree.gen'
-// Styles
-import './styles/index.css'
+import { StrictMode, Suspense } from 'react'
+import { createRoot } from 'react-dom/client'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { RouterProvider } from '@tanstack/react-router'
+import { Toaster } from 'sonner'
+import { ApiError } from '@/api/client'
+import { router } from '@/app/router'
+import './styles.css'
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: (failureCount, error) => {
-        // eslint-disable-next-line no-console
-        if (import.meta.env.DEV) console.log({ failureCount, error })
-
-        if (failureCount >= 0 && import.meta.env.DEV) return false
-        if (failureCount > 3 && import.meta.env.PROD) return false
-
-        return !(error instanceof ApiError && [401, 403].includes(error.status))
-      },
-      refetchOnWindowFocus: import.meta.env.PROD,
-      staleTime: 10 * 1000, // 10s
-    },
-    mutations: {
-      onError: (error) => {
-        handleServerError(error)
-
-        if (error instanceof ApiError) {
-          if (error.status === 304) {
-            toast.error('内容未修改！')
-          }
-        }
-      },
+      staleTime: 15_000,
+      retry: (count, error) => !(error instanceof ApiError && error.status < 500) && count < 2,
+      refetchOnWindowFocus: false,
     },
   },
-  queryCache: new QueryCache({
-    onError: (error) => {
-      if (error instanceof ApiError) {
-        if (error.status === 401) {
-          toast.error('会话已过期！')
-          useAuthStore.getState().auth.reset()
-          const redirect = `${router.history.location.href}`
-          router.navigate({ to: '/sign-in', search: { redirect } })
-        }
-        if (error.status === 500) {
-          toast.error('服务器内部错误！')
-          if (import.meta.env.PROD) {
-            router.navigate({ to: '/500' })
-          }
-        }
-      }
-    },
-  }),
 })
 
-// 创建路由实例
-const router = createRouter({
-  routeTree,
-  context: { queryClient },
-  defaultPreload: 'intent',
-  defaultPreloadStaleTime: 0,
-})
+const root = document.getElementById('root')
+if (!root) throw new Error('Missing root element')
 
-// 注册路由类型
-declare module '@tanstack/react-router' {
-  interface Register {
-    router: typeof router
-  }
-}
-
-// 初始化认证并渲染应用
-const rootElement = document.getElementById('root')!
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement)
-
-  // 初始化认证会话
-  useAuthStore
-    .getState()
-    .auth.initializeAuth()
-    .then(() => {
-      root.render(
-        <StrictMode>
-          <QueryClientProvider client={queryClient}>
-            <ThemeProvider>
-              <FontProvider>
-                <DirectionProvider>
-                  <RouterProvider router={router} />
-                </DirectionProvider>
-              </FontProvider>
-            </ThemeProvider>
-          </QueryClientProvider>
-        </StrictMode>
-      )
-    })
-}
+createRoot(root).render(
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <Suspense
+        fallback={
+          <div className='grid min-h-screen place-items-center bg-[#f4f2ec]'>
+            <div className='text-center'>
+              <div className='mx-auto h-9 w-9 animate-pulse rounded-xl bg-[#216a55]' />
+              <p className='mt-4 text-sm font-medium text-[#68736e]'>正在打开私人账本…</p>
+            </div>
+          </div>
+        }
+      >
+        <RouterProvider router={router} context={{ queryClient }} />
+      </Suspense>
+      <Toaster
+        position='top-right'
+        closeButton
+        toastOptions={{
+          style: {
+            background: '#fffefa',
+            color: '#25312c',
+            border: '1px solid #d9dfda',
+            borderRadius: '12px',
+            boxShadow: '0 16px 40px rgb(24 35 31 / 14%)',
+            fontSize: '14px',
+          },
+        }}
+      />
+    </QueryClientProvider>
+  </StrictMode>
+)

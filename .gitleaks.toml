@@ -1,0 +1,6 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Expired local Claude session tokens from the pre-public prototype; the file is removed in v2"
+commits = ["b123675f047eda071d57a9e214e40520ec94f8dd"]

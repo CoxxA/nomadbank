@@ -6,6 +6,7 @@ bin/
 /nomadbank
 *.test
 *.out
+.gocache/
 
 # ==========================================
 # 数据目录
@@ -18,7 +19,8 @@ data/
 # ==========================================
 # 前端构建产物（由 CI 构建）
 # ==========================================
-web/dist/
+web/dist/*
+!web/dist/.gitkeep
 
 # ==========================================
 # Node.js
@@ -28,10 +30,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-# 前端 package-lock 不提交（使用 npm ci 从 package.json 安装）
-frontend/package-lock.json
-# E2E 测试需要 package-lock.json
-!e2e/package-lock.json
+# 所有 Node 项目都提交 package-lock.json，以保证可重复构建。
 
 # ==========================================
 # 环境变量
@@ -59,6 +58,4 @@ tmp/
 temp/
 
 .worktrees/
-
-# git worktrees
-.worktrees/
+.claude/

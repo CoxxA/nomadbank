@@ -1,15 +1,22 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"flag"
 	"fmt"
+	"log"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
+	_ "time/tzdata"
 
-	"github.com/CoxxA/nomadbank/internal/config"
-	"github.com/CoxxA/nomadbank/internal/logger"
-	"github.com/CoxxA/nomadbank/server"
-	"github.com/CoxxA/nomadbank/store"
-	"github.com/CoxxA/nomadbank/web"
+	"github.com/CoxxA/nomadbank/v2/internal/config"
+	"github.com/CoxxA/nomadbank/v2/internal/httpapi"
+	"github.com/CoxxA/nomadbank/v2/internal/sqlite"
+	"github.com/CoxxA/nomadbank/v2/web"
 )
 
 var (
@@ -18,71 +25,71 @@ var (
 )
 
 func main() {
-	// 命令行参数
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
 	var (
 		showVersion bool
 		port        int
 		dataDir     string
-		mode        string
 	)
-
 	flag.BoolVar(&showVersion, "version", false, "显示版本信息")
-	flag.IntVar(&port, "port", 0, "服务端口 (默认: 8080)")
-	flag.StringVar(&dataDir, "data", "", "数据目录 (默认: ./data)")
-	flag.StringVar(&mode, "mode", "", "运行模式: dev/prod (默认: dev)")
+	flag.IntVar(&port, "port", 0, "HTTP 端口")
+	flag.StringVar(&dataDir, "data", "", "数据目录")
 	flag.Parse()
 
-	// 显示版本
 	if showVersion {
-		fmt.Printf("NomadBankKeeper %s (%s)\n", version, commit)
-		os.Exit(0)
+		fmt.Printf("NomadBank %s (%s)\n", version, commit)
+		return nil
 	}
 
-	// 加载配置
-	cfg := config.Load()
-
-	// 命令行参数覆盖环境变量
-	if port > 0 {
-		cfg.Port = port
+	appConfig, err := config.Load()
+	if err != nil {
+		return err
+	}
+	if port != 0 {
+		appConfig.Port = port
 	}
 	if dataDir != "" {
-		cfg.DataDir = dataDir
+		appConfig.DataDir = dataDir
 	}
-	if mode != "" {
-		cfg.Mode = mode
+	if err := appConfig.Validate(); err != nil {
+		return err
 	}
 
-	// 初始化日志
-	log := logger.Default()
-	log.SetLevelFromMode(cfg.Mode)
-
-	// 初始化数据库
-	db, err := store.NewDB(cfg.DBPath(), cfg.IsDev())
+	store, err := sqlite.Open(appConfig.DBPath())
 	if err != nil {
-		log.Fatal("初始化数据库失败: %v", err)
+		return err
+	}
+	defer store.Close()
+
+	server := httpapi.New(appConfig, store)
+	web.RegisterRoutes(server.Echo())
+
+	serverErrors := make(chan error, 1)
+	go func() {
+		log.Printf("NomadBank %s 启动于 http://localhost%s", version, appConfig.Address())
+		serverErrors <- server.Start()
+	}()
+
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(signals)
+
+	select {
+	case received := <-signals:
+		log.Printf("收到信号 %s，正在停止服务", received)
+	case err := <-serverErrors:
+		if !errors.Is(err, http.ErrServerClosed) {
+			return err
+		}
+		return nil
 	}
 
-	// 创建 Store
-	s := store.New(db)
-
-	// 创建服务器
-	srv := server.New(cfg, s)
-
-	// 注册 API 路由
-	srv.SetupRoutesWithVersion(version, commit)
-
-	// 注册前端静态文件
-	web.RegisterRoutes(srv.Echo())
-
-	// 启动服务
-	log.WithFields(map[string]interface{}{
-		"version":  version,
-		"data_dir": cfg.DataDir,
-		"mode":     cfg.Mode,
-		"port":     cfg.Port,
-	}).Info("NomadBankKeeper 启动中")
-
-	if err := srv.Start(); err != nil {
-		log.Fatal("服务启动失败: %v", err)
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	return server.Shutdown(ctx)
 }
