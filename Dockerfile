@@ -18,7 +18,7 @@ RUN CGO_ENABLED=0 go build \
     -ldflags "-s -w -X main.version=${VERSION} -X main.commit=${COMMIT}" \
     -o /out/nomadbank ./cmd/nomadbank
 
-FROM alpine:3.23
+FROM alpine:3.24
 RUN apk add --no-cache ca-certificates tzdata \
     && addgroup -S nomadbank \
     && adduser -S -G nomadbank nomadbank \
