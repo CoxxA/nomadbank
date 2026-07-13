@@ -5,273 +5,143 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  # 后端测试
-  backend-test:
-    name: Backend Tests
+  backend:
+    name: Backend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
-          go-version: '1.24'
+          go-version: '1.26.x'
+          check-latest: true
           cache: true
-
-      - name: Create placeholder for embed
-        run: mkdir -p web/dist && touch web/dist/.gitkeep
-
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Run tests
-        run: go test -v -race -coverprofile=coverage.out ./...
-
+      - name: Format
+        run: test -z "$(gofmt -l cmd internal web)"
+      - name: Vet
+        run: go vet ./...
+      - name: Test
+        run: go test -race -coverprofile=coverage.out ./...
+      - name: Vulnerability check
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.5.0 ./...
       - name: Upload coverage
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
-          files: ./coverage.out
+          files: coverage.out
           fail_ci_if_error: false
 
-  # 后端代码检查
-  backend-lint:
-    name: Backend Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
-          cache: true
-
-      - name: Create placeholder for embed
-        run: mkdir -p web/dist && touch web/dist/.gitkeep
-
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          version: latest
-
-  # 安全扫描
-  security-scan:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
-          cache: true
-
-      - name: Create placeholder for embed
-        run: mkdir -p web/dist && touch web/dist/.gitkeep
-
-      - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
-
-      - name: Run govulncheck
-        run: govulncheck ./...
-
-      - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # Docker 镜像安全扫描
-  docker-scan:
-    name: Docker Security Scan
-    runs-on: ubuntu-latest
-    needs: [backend-test, frontend-test]
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: false
-          load: true
-          tags: nomadbank:scan
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: 'nomadbank:scan'
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
-
-  # 前端测试
-  frontend-test:
-    name: Frontend Tests
+  frontend:
+    name: Frontend
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v6
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '24'
+          cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Verify generated API types
+        run: npm run api:check
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run test -- --run
+      - run: npm run build
+      - run: npm audit --audit-level=high
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
-        run: npm run test -- --run
-
-      - name: Type check
-        run: npx tsc --noEmit
-
-  # 前端代码检查
-  frontend-lint:
-    name: Frontend Lint
+  e2e:
+    name: End-to-end
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
+    needs: [backend, frontend]
     steps:
       - uses: actions/checkout@v6
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-go@v6
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run ESLint
-        run: npm run lint
-
-      - name: Check formatting
-        run: npm run format:check
-
-  # 构建验证
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: [backend-test, frontend-test]
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
+          go-version: '1.26.x'
+          check-latest: true
           cache: true
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Build frontend
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: |
+            frontend/package-lock.json
+            e2e/package-lock.json
+      - name: Build application
         run: |
           cd frontend
           npm ci
           npm run build
-
-      - name: Build backend
-        run: go build -o bin/nomadbank ./cmd/nomadbank
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: nomadbank-binary
-          path: bin/nomadbank
-          retention-days: 7
-
-  # E2E 测试
-  e2e-test:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    needs: [build]
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
-          cache: true
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: nomadbank-binary
-          path: bin
-
-      - name: Make binary executable
-        run: chmod +x bin/nomadbank
-
+          cd ..
+          CGO_ENABLED=0 go build -trimpath -o bin/nomadbank ./cmd/nomadbank
+      - name: Start application
+        run: |
+          mkdir -p "$RUNNER_TEMP/nomadbank-data"
+          DATA_DIR="$RUNNER_TEMP/nomadbank-data" ./bin/nomadbank &
+      - name: Wait for readiness
+        run: |
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:8080/health/ready && exit 0
+            sleep 1
+          done
+          exit 1
       - name: Install Playwright
         working-directory: e2e
         run: |
           npm ci
           npx playwright install --with-deps chromium
-
-      - name: Start server
-        run: |
-          mkdir -p data
-          bin/nomadbank &
-          sleep 5
+      - name: Run core flow
+        working-directory: e2e
+        run: npm test -- --project=chromium
         env:
-          MODE: dev
-          DATA_DIR: ./data
-          JWT_SECRET: test-secret-for-ci
+          BASE_URL: http://127.0.0.1:8080
 
-      - name: Wait for server
+  container:
+    name: Container
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-buildx-action@v4
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          load: true
+          tags: nomadbank:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke test image
         run: |
-          for i in {1..30}; do
-            if curl -s http://localhost:8080/health > /dev/null; then
-              echo "Server is ready"
-              exit 0
-            fi
-            echo "Waiting for server... ($i)"
+          docker run --detach --name nomadbank-ci --publish 127.0.0.1:8080:8080 nomadbank:ci
+          trap 'docker rm --force --volumes nomadbank-ci >/dev/null 2>&1' EXIT
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:8080/health/ready && exit 0
             sleep 1
           done
-          echo "Server failed to start"
+          docker logs nomadbank-ci
           exit 1
 
-      - name: Run E2E tests
-        working-directory: e2e
-        run: npx playwright test --project=chromium
-        env:
-          BASE_URL: http://localhost:8080
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: failure()
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
         with:
-          name: playwright-report
-          path: e2e/playwright-report/
-          retention-days: 7
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

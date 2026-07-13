@@ -4,6 +4,7 @@ import (
 	"embed"
 	"io/fs"
 	"net/http"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 )
@@ -24,7 +25,7 @@ func RegisterRoutes(e *echo.Echo) {
 	staticHandler := http.FileServer(http.FS(distSubFS))
 
 	// 处理所有非 API 请求
-	e.GET("/*", echo.WrapHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	spaHandler := echo.WrapHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 尝试提供静态文件
 		path := r.URL.Path
 		if path == "/" {
@@ -40,5 +41,12 @@ func RegisterRoutes(e *echo.Echo) {
 		// 文件不存在，返回 index.html（SPA 路由）
 		r.URL.Path = "/"
 		staticHandler.ServeHTTP(w, r)
-	})))
+	}))
+	e.GET("/*", func(c echo.Context) error {
+		path := c.Request().URL.Path
+		if path == "/api" || strings.HasPrefix(path, "/api/") || path == "/health" || strings.HasPrefix(path, "/health/") {
+			return echo.ErrNotFound
+		}
+		return spaHandler(c)
+	})
 }

@@ -1,0 +1,17 @@
+* text=auto eol=lf
+
+# Keep Windows command files native when contributors add them.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary assets must never be line-ending normalized.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.zip binary
+*.gz binary
+*.exe binary

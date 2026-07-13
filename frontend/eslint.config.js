@@ -7,7 +7,7 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default defineConfig(
-  { ignores: ['dist', 'src/components/ui'] },
+  { ignores: ['dist', 'coverage', 'src/api/schema.gen.ts'] },
   {
     extends: [
       js.configs.recommended,
@@ -25,10 +25,7 @@ export default defineConfig(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       'no-console': 'warn',
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [

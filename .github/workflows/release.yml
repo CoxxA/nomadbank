@@ -1,144 +1,310 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '正式版本号（例如 2.0.0，不要带 v）'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # 运行测试
-  test:
-    name: Test
+  prepare:
+    name: Validate release
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+      image: ${{ steps.release.outputs.image }}
     steps:
-      - uses: actions/checkout@v6
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Validate branch, commit, and version
+        id: release
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Releases must be started from the main branch."
+            exit 1
+          fi
+
+          git fetch --quiet origin main --tags
+          remote_main="$(git rev-parse origin/main)"
+          if [[ "$GITHUB_SHA" != "$remote_main" ]]; then
+            echo "::error::The selected commit is not the latest commit on main."
+            exit 1
+          fi
+
+          version="${INPUT_VERSION//[[:space:]]/}"
+          if [[ ! "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::Version must use X.Y.Z format without a leading v."
+            exit 1
+          fi
+
+          tag="v${version}"
+          major="${version%%.*}"
+          module_path="$(sed -n 's/^module[[:space:]]\+//p' go.mod | head -n 1)"
+          if (( major >= 2 )); then
+            if [[ "$module_path" != */v"$major" ]]; then
+              echo "::error::Go module ${module_path} must end in /v${major} before releasing ${tag}."
+              exit 1
+            fi
+          elif [[ "$module_path" =~ /v[2-9][0-9]*$ ]]; then
+            echo "::error::Go module ${module_path} is not compatible with release ${tag}."
+            exit 1
+          fi
+
+          if ! grep -Fq "## [${version}]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md must contain a ## [${version}] release section."
+            exit 1
+          fi
+
+          if git show-ref --tags --verify --quiet "refs/tags/${tag}"; then
+            echo "::error::Tag ${tag} already exists. Choose a new version."
+            exit 1
+          fi
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::Release ${tag} already exists. Choose a new version."
+            exit 1
+          fi
+
+          latest_tag="$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-version:refname | head -n 1)"
+          if [[ -n "$latest_tag" ]]; then
+            newest="$(printf '%s\n%s\n' "$latest_tag" "$tag" | sort -V | tail -n 1)"
+            if [[ "$newest" != "$tag" ]]; then
+              echo "::error::Version ${tag} must be newer than ${latest_tag}."
+              exit 1
+            fi
+          fi
+
+          repository="${GITHUB_REPOSITORY,,}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "image=${REGISTRY}/${repository}" >> "$GITHUB_OUTPUT"
+          echo "Preparing ${tag} from ${GITHUB_SHA}."
+
+  verify:
+    name: Run full CI
+    needs: prepare
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  binaries:
+    name: Build release assets
+    runs-on: ubuntu-latest
+    needs: [prepare, verify]
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
-          go-version: '1.24'
+          go-version: '1.26.x'
+          check-latest: true
           cache: true
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '24'
+          cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Create placeholder for embed
-        run: mkdir -p web/dist && touch web/dist/.gitkeep
-
-      - name: Run backend tests
-        run: go test -v ./...
-
-      - name: Run frontend tests
+      - name: Build frontend
+        working-directory: frontend
         run: |
-          cd frontend
           npm ci
-          npm run test -- --run
+          npm run build
 
-  # 构建并推送 Docker 镜像
-  docker:
-    name: Build & Push Docker
+      - name: Build and package binaries
+        shell: bash
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p build dist
+          ldflags="-s -w -X main.version=${TAG} -X main.commit=${COMMIT}"
+
+          for target in \
+            linux/amd64 linux/arm64 \
+            darwin/amd64 darwin/arm64 \
+            windows/amd64 windows/arm64
+          do
+            os="${target%/*}"
+            arch="${target#*/}"
+            package_dir="build/${os}-${arch}"
+            binary="nomadbank"
+            if [[ "$os" == "windows" ]]; then
+              binary="nomadbank.exe"
+            fi
+
+            mkdir -p "$package_dir"
+            CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" \
+              go build -trimpath -ldflags "$ldflags" \
+              -o "${package_dir}/${binary}" ./cmd/nomadbank
+            cp README.md LICENSE "$package_dir/"
+
+            archive="nomadbank_${VERSION}_${os}_${arch}"
+            if [[ "$os" == "windows" ]]; then
+              (cd "$package_dir" && zip -q -r "${GITHUB_WORKSPACE}/dist/${archive}.zip" .)
+            else
+              tar -C "$package_dir" -czf "${GITHUB_WORKSPACE}/dist/${archive}.tar.gz" .
+            fi
+          done
+
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@v0.24.0
+        with:
+          file: build/linux-amd64/nomadbank
+          format: spdx-json
+          output-file: dist/nomadbank_${{ needs.prepare.outputs.version }}_sbom.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Generate checksums
+        working-directory: dist
+        shell: bash
+        run: sha256sum nomadbank_* > SHA256SUMS
+
+      - name: Attest binary provenance
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            dist/*.tar.gz
+            dist/*.zip
+
+      - name: Attest binary SBOM
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            dist/*.tar.gz
+            dist/*.zip
+          sbom-path: dist/nomadbank_${{ needs.prepare.outputs.version }}_sbom.spdx.json
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-assets-${{ needs.prepare.outputs.tag }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+  image:
+    name: Publish container image
     runs-on: ubuntu-latest
-    needs: test
+    needs: [prepare, verify, binaries]
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     steps:
-      - uses: actions/checkout@v6
+      - name: Check out repository
+        uses: actions/checkout@v6
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata
+      - name: Generate image metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ needs.prepare.outputs.image }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}},value=${{ needs.prepare.outputs.tag }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.prepare.outputs.tag }}
+            type=semver,pattern={{major}},value=${{ needs.prepare.outputs.tag }}
+            type=raw,value=latest
 
-      - name: Build and push
-        uses: docker/build-push-action@v6
+      - name: Build and push image
+        id: push
+        uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ needs.prepare.outputs.tag }}
+            COMMIT=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          provenance: mode=max
+          sbom: true
 
-  # 创建 GitHub Release
-  release:
-    name: Create Release
+      - name: Attest container provenance
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ needs.prepare.outputs.image }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+  publish:
+    name: Publish GitHub Release
     runs-on: ubuntu-latest
-    needs: docker
+    needs: [prepare, binaries, image]
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v6
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - name: Download release assets
+        uses: actions/download-artifact@v8
         with:
-          go-version: '1.24'
-          cache: true
+          name: release-assets-${{ needs.prepare.outputs.tag }}
+          path: dist
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+      - name: Verify checksums
+        working-directory: dist
+        run: sha256sum --check SHA256SUMS
 
-      - name: Build frontend
+      - name: Create immutable-ready GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.prepare.outputs.tag }}
         run: |
-          cd frontend
-          npm ci
-          npm run build
-
-      - name: Build binaries
-        run: |
-          mkdir -p dist
-          # Linux AMD64
-          GOOS=linux GOARCH=amd64 go build -o dist/nomadbank-linux-amd64 ./cmd/nomadbank
-          # Linux ARM64
-          GOOS=linux GOARCH=arm64 go build -o dist/nomadbank-linux-arm64 ./cmd/nomadbank
-          # macOS AMD64
-          GOOS=darwin GOARCH=amd64 go build -o dist/nomadbank-darwin-amd64 ./cmd/nomadbank
-          # macOS ARM64
-          GOOS=darwin GOARCH=arm64 go build -o dist/nomadbank-darwin-arm64 ./cmd/nomadbank
-          # Windows AMD64
-          GOOS=windows GOARCH=amd64 go build -o dist/nomadbank-windows-amd64.exe ./cmd/nomadbank
-
-      - name: Create checksums
-        run: |
-          cd dist
-          sha256sum * > checksums.txt
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          generate_release_notes: true
-          files: |
-            dist/*
+          gh release create "$TAG" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "NomadBank $TAG" \
+            --generate-notes \
+            --fail-on-no-commits \
+            --latest
