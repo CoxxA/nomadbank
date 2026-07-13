@@ -29,7 +29,7 @@ test('所有者可以完成核心保活流程', async ({ page }) => {
     name: '生成任务',
     exact: true,
   })
-  await generateDialog.getByLabel('账户分组', { exact: true }).selectOption('测试分组')
+  await generateDialog.locator('#task-group').selectOption('测试分组')
   await generateDialog.getByLabel('生成周期', { exact: true }).fill('1')
   await generateDialog.getByRole('button', { name: '生成任务', exact: true }).click()
 
