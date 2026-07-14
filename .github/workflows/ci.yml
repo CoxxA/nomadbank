@@ -18,6 +18,9 @@ jobs:
   backend:
     name: Backend
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
@@ -37,7 +40,8 @@ jobs:
         uses: codecov/codecov-action@v6
         with:
           files: coverage.out
-          fail_ci_if_error: false
+          use_oidc: true
+          fail_ci_if_error: true
 
   frontend:
     name: Frontend
