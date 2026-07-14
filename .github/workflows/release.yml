@@ -107,7 +107,6 @@ jobs:
     uses: ./.github/workflows/ci.yml
     permissions:
       contents: read
-      id-token: write
 
   binaries:
     name: Build release assets
