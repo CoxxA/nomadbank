@@ -35,7 +35,7 @@ docker compose ps
 
 | 变量                | 默认值                                     | 适用方式        | 说明                                                       |
 | ------------------- | ------------------------------------------ | --------------- | ---------------------------------------------------------- |
-| `NOMADBANK_VERSION` | 无，必须设置                               | Docker Compose  | 已发布的精确版本号，例如 `2.0.0`                           |
+| `NOMADBANK_VERSION` | 无，必须设置                               | Docker Compose  | 已发布的精确版本号，例如 `2.0.1`                           |
 | `NOMADBANK_PORT`    | `8080`                                     | Docker Compose  | 映射到宿主机的 HTTP 端口                                   |
 | `PORT`              | `8080`                                     | 二进制/容器内部 | 应用监听端口                                               |
 | `DATA_DIR`          | `./data`                                   | 二进制          | SQLite 数据目录；官方容器固定使用 `/data`                  |
@@ -47,7 +47,7 @@ Compose 会从 `.env` 读取 `SESSION_DAYS` 和 `TZ` 并传入容器。不要把
 ## Docker Run
 
 ```bash
-VERSION=2.0.0 # 必须是已经发布的版本
+VERSION=2.0.1 # 必须是已经发布的版本
 docker run -d \
   --name nomadbank \
   -p 8080:8080 \
@@ -64,7 +64,7 @@ docker run -d \
 从 GitHub Release 下载与你的系统和架构对应的压缩包以及 `SHA256SUMS`。例如 Linux amd64：
 
 ```bash
-VERSION=2.0.0
+VERSION=2.0.1
 grep "nomadbank_${VERSION}_linux_amd64.tar.gz" SHA256SUMS | sha256sum --check
 tar -xzf "nomadbank_${VERSION}_linux_amd64.tar.gz"
 chmod +x nomadbank

@@ -7,9 +7,25 @@
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-07-15
+
+### Added
+
+- 在 Linux、Windows 和 macOS 上解压并启动真实发布包的自动冒烟测试。
+- 同时覆盖 Go 与前端生产依赖的 SPDX SBOM，以及精确镜像摘要验证。
+- 离线备份恢复集成测试、E2E 失败诊断附件、支持指南和真实界面截图。
+
 ### Changed
 
-- 后续变更将在此处记录，并在发布时由 GitHub 自动生成 Release Notes。
+- 更新 Go、前端、E2E 和容器基础依赖，包括 Vite 8、Echo、SQLite、x/crypto 与 Playwright。
+- 将第三方 GitHub Actions 固定到不可变提交，并加强依赖审查、Secret 扫描和 main 必需检查。
+- 正式 Release 成功后才推广 `X.Y`、`X` 和 `latest` 镜像标签，失败发布不会改变稳定标签。
+- 将 Go 开发基线统一为 1.26，并加入固定版本的 golangci-lint 质量门禁。
+- 重写用户入口和部署文档；Compose 现在强制使用已发布的精确版本。
+
+### Removed
+
+- 移除未使用的 Codecov 上传和相关外部集成。
 
 ## [2.0.0] - 2026-07-12
 
@@ -41,6 +57,7 @@
 
 - 首个实验版本，包含多用户认证、银行账户、策略、任务与通知配置。
 
-[Unreleased]: https://github.com/CoxxA/nomadbank/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/CoxxA/nomadbank/compare/v2.0.1...HEAD
+[2.0.1]: https://github.com/CoxxA/nomadbank/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/CoxxA/nomadbank/compare/v0.1.0...v2.0.0
 [0.1.0]: https://github.com/CoxxA/nomadbank/releases/tag/v0.1.0
