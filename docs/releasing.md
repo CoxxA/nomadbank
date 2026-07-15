@@ -150,12 +150,12 @@ NomadBank 使用 `主版本.次版本.修订号`，例如 `2.3.1`：
 
 - 确认发布目标是 `main` 的最新提交，并拒绝重复或错误格式的版本。
 - 完整执行后端、前端和构建验证。
-- 创建 `v2.1.0` 形式的 Git 标签和正式 GitHub Release。
-- 根据 PR 和 `.github/release.yml` 生成分类发布说明。
 - 构建 Linux、macOS 和 Windows 的六个平台压缩包以及 `SHA256SUMS`。
-- 生成 SPDX JSON SBOM 和 GitHub 构建证明。
-- 发布 `linux/amd64`、`linux/arm64` 容器镜像。
-- 为镜像更新 `2.1.0`、`2.1`、`2` 和 `latest` 标签。
+- 生成同时覆盖 Go 与前端运行依赖的 SPDX JSON SBOM 和 GitHub 构建证明。
+- 在 Linux、Windows 和 macOS 上解压正式安装包，核对版本并实际启动健康检查。
+- 先发布并验证只有 `2.1.0` 精确标签的 `linux/amd64`、`linux/arm64` 容器镜像。
+- 创建 `v2.1.0` 形式的 Git 标签和正式 GitHub Release，并根据 PR 生成分类发布说明。
+- 正式 Release 成功后，才把同一镜像摘要推广为 `2.1`、`2` 和 `latest` 标签。
 
 发布不需要自行创建 GitHub Token 或配置第三方密钥，仓库自带的 `GITHUB_TOKEN` 足够。
 
@@ -167,6 +167,7 @@ NomadBank 使用 `主版本.次版本.修订号`，例如 `2.3.1`：
 - Release 中包含六个平台压缩包、`SHA256SUMS` 和 SPDX SBOM。
 - Release 页面显示构建证明；工作流的镜像构建也有 provenance。
 - `ghcr.io/coxxa/nomadbank:X.Y.Z` 可以拉取，并且容器包为 Public。
+- `X.Y`、`X` 和 `latest` 标签与精确版本 `X.Y.Z` 指向同一个多架构镜像摘要。
 - 在一个临时数据目录中启动正式二进制或精确版本镜像，访问 `/health/ready`，再完成初始化、登录和查看任务的冒烟检查。
 - README、部署文档和 CHANGELOG 中没有指向不存在版本的示例。
 
@@ -187,6 +188,8 @@ Get-Content .\SHA256SUMS
 - 测试、构建或文档检查失败：通过新的 PR 修复，等 `main` CI 通过，再用原版本号重新运行 Release。
 - 提示目标不是最新 `main`：回到 Release 页面，Branch 选择 `main` 后重新运行。
 - 提示版本或标签已存在：先检查 Releases。已经正式发布就不能复用该版本；修复问题后增加 PATCH 版本。
+- GitHub Release 创建前失败：滚动镜像标签不会变化；如果精确版本镜像已经存在，它仍不算正式发布。
+- GitHub Release 已成功但 **Promote rolling image tags** 失败：只使用 **Re-run failed jobs** 重跑推广任务，不要删除 Release、重建程序或手工覆盖标签。
 
 自动化在全部发布条件满足前不会创建正式 Release。不要为了“补齐”失败流程而手工建标签、上传部分文件或覆盖镜像标签，这会造成二进制、源码与容器不一致。
 
