@@ -4,13 +4,12 @@
 
 ```bash
 cp .env.example .env
-# 编辑 .env，把 NOMADBANK_VERSION 设置为已发布的版本号
 docker compose pull
 docker compose up -d
 docker compose ps
 ```
 
-默认访问地址是 <http://localhost:8080>。把 `NOMADBANK_VERSION` 设置为 GitHub Releases 中实际存在的版本号；如果还没有可用的 v2 Release，请使用源码构建。生产环境不要长期跟随 `latest`。
+默认访问地址是 <http://localhost:8080>。`.env.example` 固定到经过验证的正式版本；部署前可以在 [GitHub Releases](https://github.com/CoxxA/nomadbank/releases) 确认该版本存在。Compose 不提供 `latest` 默认值，也不会从当前源码隐式构建镜像。
 
 查看日志：
 
@@ -23,6 +22,27 @@ docker compose logs -f nomadbank
 ```bash
 curl --fail http://localhost:8080/health/ready
 ```
+
+升级时先按[备份与恢复](backup-restore.md)停止写入并备份整个数据目录，再修改 `.env` 中的 `NOMADBANK_VERSION`：
+
+```bash
+docker compose pull
+docker compose up -d
+docker compose ps
+```
+
+## 配置
+
+| 变量                | 默认值                                     | 适用方式        | 说明                                                       |
+| ------------------- | ------------------------------------------ | --------------- | ---------------------------------------------------------- |
+| `NOMADBANK_VERSION` | 无，必须设置                               | Docker Compose  | 已发布的精确版本号，例如 `2.0.0`                           |
+| `NOMADBANK_PORT`    | `8080`                                     | Docker Compose  | 映射到宿主机的 HTTP 端口                                   |
+| `PORT`              | `8080`                                     | 二进制/容器内部 | 应用监听端口                                               |
+| `DATA_DIR`          | `./data`                                   | 二进制          | SQLite 数据目录；官方容器固定使用 `/data`                  |
+| `SESSION_DAYS`      | `30`                                       | 全部            | 会话有效天数，范围 1～365                                  |
+| `TZ`                | Compose：`Asia/Shanghai`；二进制：系统时区 | 全部            | 进程和日志时区；任务排期使用所有者在界面中设置的 IANA 时区 |
+
+Compose 会从 `.env` 读取 `SESSION_DAYS` 和 `TZ` 并传入容器。不要把密码或银行凭据写入 `.env`。
 
 ## Docker Run
 
