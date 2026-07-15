@@ -64,7 +64,11 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	defer store.Close()
+	defer func() {
+		if err := store.Close(); err != nil {
+			log.Printf("close database: %v", err)
+		}
+	}()
 
 	server := httpapi.New(appConfig, store)
 	web.RegisterRoutes(server.Echo())

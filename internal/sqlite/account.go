@@ -25,7 +25,8 @@ func (s *Store) ListAccounts(ctx context.Context, activeOnly bool, groupName str
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	// Iteration errors are returned by rows.Err; Close is cleanup only.
+	defer func() { _ = rows.Close() }()
 
 	accounts := make([]domain.Account, 0)
 	for rows.Next() {

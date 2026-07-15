@@ -1,4 +1,4 @@
-.PHONY: build run frontend api-check test test-go test-race test-web lint verify docker clean
+.PHONY: build run frontend api-check test test-go test-race test-web lint-go lint verify docker clean
 
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
@@ -27,9 +27,16 @@ test-web:
 
 test: test-go test-web
 
-lint:
-	test -z "$$(gofmt -l cmd internal web)"
-	go vet ./...
+lint-go:
+	@diff="$$(mktemp)"; \
+	trap 'rm -f "$$diff"' EXIT; \
+	golangci-lint fmt --diff >"$$diff"; status=$$?; \
+	cat "$$diff"; \
+	if [ "$$status" -ne 0 ]; then exit "$$status"; fi; \
+	if [ -s "$$diff" ]; then exit 1; fi
+	golangci-lint run
+
+lint: lint-go
 	cd frontend && npm run lint && npm run format:check
 
 verify: api-check lint test
