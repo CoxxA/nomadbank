@@ -179,14 +179,35 @@ jobs:
             fi
           done
 
+      - name: Stage dependency manifests for SBOM
+        shell: bash
+        run: |
+          mkdir -p build/sbom-source/frontend
+          cp go.mod go.sum build/sbom-source/
+          cp frontend/package.json frontend/package-lock.json build/sbom-source/frontend/
+
       - name: Generate SPDX SBOM
+        env:
+          SYFT_SOURCE_NAME: NomadBank
+          SYFT_SOURCE_VERSION: ${{ needs.prepare.outputs.version }}
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
-          file: build/linux-amd64/nomadbank
+          path: build/sbom-source
+          config: .github/syft-release.yaml
           format: spdx-json
           output-file: dist/nomadbank_${{ needs.prepare.outputs.version }}_sbom.spdx.json
+          syft-version: v1.44.0
           upload-artifact: false
           upload-release-assets: false
+
+      - name: Verify application SBOM coverage
+        shell: bash
+        env:
+          SBOM: dist/nomadbank_${{ needs.prepare.outputs.version }}_sbom.spdx.json
+        run: |
+          set -euo pipefail
+          jq -e '[.. | strings | select(startswith("pkg:golang/"))] | length > 0' "$SBOM" >/dev/null
+          jq -e '[.. | strings | select(startswith("pkg:npm/"))] | length > 0' "$SBOM" >/dev/null
 
       - name: Generate checksums
         working-directory: dist
@@ -217,10 +238,49 @@ jobs:
           retention-days: 7
           compression-level: 0
 
+  smoke_binaries:
+    name: Smoke ${{ matrix.name }} archive
+    runs-on: ${{ matrix.runner }}
+    needs: [prepare, binaries]
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux amd64
+            runner: ubuntu-24.04
+            archive_suffix: linux_amd64.tar.gz
+          - name: Windows amd64
+            runner: windows-2025
+            archive_suffix: windows_amd64.zip
+          - name: macOS arm64
+            runner: macos-15
+            archive_suffix: darwin_arm64.tar.gz
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Download release assets
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-assets-${{ needs.prepare.outputs.tag }}
+          path: dist
+
+      - name: Start and verify packaged application
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          COMMIT: ${{ github.sha }}
+        run: ./scripts/smoke-release.ps1 -Archive "dist/nomadbank_${env:VERSION}_${{ matrix.archive_suffix }}" -ExpectedVersion $env:TAG -ExpectedCommit $env:COMMIT
+
   image:
     name: Publish container image
     runs-on: ubuntu-latest
-    needs: [prepare, verify, binaries]
+    needs: [prepare, verify, binaries, smoke_binaries]
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
     permissions:
       contents: read
       packages: write
@@ -251,9 +311,6 @@ jobs:
           images: ${{ needs.prepare.outputs.image }}
           tags: |
             type=semver,pattern={{version}},value=${{ needs.prepare.outputs.tag }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ needs.prepare.outputs.tag }}
-            type=semver,pattern={{major}},value=${{ needs.prepare.outputs.tag }}
-            type=raw,value=latest
 
       - name: Build and push image
         id: push
@@ -279,10 +336,44 @@ jobs:
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
+      - name: Download application SBOM
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-assets-${{ needs.prepare.outputs.tag }}
+          path: dist
+
+      - name: Attest container application SBOM
+        uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4
+        with:
+          subject-name: ${{ needs.prepare.outputs.image }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          sbom-path: dist/nomadbank_${{ needs.prepare.outputs.version }}_sbom.spdx.json
+          push-to-registry: true
+
+      - name: Smoke test published image digest
+        shell: bash
+        env:
+          IMAGE: ${{ needs.prepare.outputs.image }}
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          set -euo pipefail
+          docker run --detach --name nomadbank-release-smoke \
+            --publish 127.0.0.1:8080:8080 "${IMAGE}@${DIGEST}"
+          trap 'docker rm --force --volumes nomadbank-release-smoke >/dev/null 2>&1' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8080/health/ready >/dev/null; then
+              curl --fail --silent http://127.0.0.1:8080/ >/dev/null
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs nomadbank-release-smoke
+          exit 1
+
   publish:
     name: Publish GitHub Release
     runs-on: ubuntu-latest
-    needs: [prepare, binaries, image]
+    needs: [prepare, binaries, smoke_binaries, image]
     permissions:
       contents: write
     steps:
@@ -308,3 +399,42 @@ jobs:
             --generate-notes \
             --fail-on-no-commits \
             --latest
+
+  promote_image:
+    name: Promote rolling image tags
+    runs-on: ubuntu-latest
+    needs: [prepare, image, publish]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0 # v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update minor, major, and latest tags
+        shell: bash
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          IMAGE: ${{ needs.prepare.outputs.image }}
+          DIGEST: ${{ needs.image.outputs.digest }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::Invalid image digest: $DIGEST"
+            exit 1
+          fi
+
+          minor="${VERSION%.*}"
+          major="${VERSION%%.*}"
+          docker buildx imagetools create \
+            --tag "${IMAGE}:${minor}" \
+            --tag "${IMAGE}:${major}" \
+            --tag "${IMAGE}:latest" \
+            "${IMAGE}@${DIGEST}"
