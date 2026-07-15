@@ -52,7 +52,8 @@ func (s *Store) listDashboardTasks(ctx context.Context, status, order string, li
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	// Iteration errors are returned by rows.Err; Close is cleanup only.
+	defer func() { _ = rows.Close() }()
 
 	tasks := make([]domain.Task, 0)
 	for rows.Next() {

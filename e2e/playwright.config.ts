@@ -10,7 +10,12 @@ export default defineConfig({
   // database cannot be idempotent. Let CI report the original failure.
   retries: 0,
   workers: 1,
-  reporter: process.env.CI ? 'github' : 'html',
+  reporter: process.env.CI
+    ? [
+        ['github'],
+        ['html', { open: 'never' }],
+      ]
+    : 'html',
   use: {
     baseURL: process.env.BASE_URL ?? 'http://localhost:8080',
     screenshot: 'only-on-failure',

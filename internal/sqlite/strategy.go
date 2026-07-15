@@ -19,7 +19,8 @@ func (s *Store) ListStrategies(ctx context.Context) ([]domain.Strategy, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	// Iteration errors are returned by rows.Err; Close is cleanup only.
+	defer func() { _ = rows.Close() }()
 
 	strategies := make([]domain.Strategy, 0)
 	for rows.Next() {

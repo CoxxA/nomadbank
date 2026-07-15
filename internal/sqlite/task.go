@@ -96,7 +96,8 @@ func (s *Store) ListTaskBatches(ctx context.Context) ([]domain.TaskBatch, error)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	// Iteration errors are returned by rows.Err; Close is cleanup only.
+	defer func() { _ = rows.Close() }()
 
 	batches := make([]domain.TaskBatch, 0)
 	for rows.Next() {
@@ -160,7 +161,8 @@ func (s *Store) ListTasks(ctx context.Context, filter TaskFilter) (domain.TaskPa
 	if err != nil {
 		return domain.TaskPage{}, err
 	}
-	defer rows.Close()
+	// Iteration errors are returned by rows.Err; Close is cleanup only.
+	defer func() { _ = rows.Close() }()
 
 	items := make([]domain.Task, 0)
 	for rows.Next() {
