@@ -1,116 +1,70 @@
 # NomadBank
 
-NomadBank 是一个面向个人自托管场景的银行账户保活任务助手。它根据你配置的账户和策略生成转账计划，帮助你记住何时在自己的账户之间进行小额转账。
+[![CI](https://github.com/CoxxA/nomadbank/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/CoxxA/nomadbank/actions/workflows/ci.yml)
+[![Latest Release](https://img.shields.io/github/v/release/CoxxA/nomadbank?sort=semver)](https://github.com/CoxxA/nomadbank/releases/latest)
+[![License](https://img.shields.io/github/license/CoxxA/nomadbank)](LICENSE)
 
-> NomadBank 不连接银行、不读取余额，也不会自动执行真实转账。所有任务都需要你自行确认和完成。
+NomadBank 是一个轻量级、单用户、自托管的银行账户保活任务助手。它根据你设置的账户和策略生成轮换计划，帮助你记住何时在自己的账户之间完成小额转账。
 
-## 特点
+> NomadBank 不连接银行、不读取余额，也不会自动执行真实转账。它只保存本地计划和完成记录，所有任务都需要你自行确认并操作。
 
-- 单实例、单所有者，首次启动完成初始化
-- 管理银行账户和可选分组
-- 配置间隔、执行时段、金额范围、周末和每日上限
-- 每个周期为所有账户生成平衡的转入/转出计划
-- 按批次查看、完成或删除任务
-- React 前端嵌入 Go 二进制
-- SQLite 本地存储，无需外部数据库或 Redis
-- 提供 Docker 镜像和跨平台单文件程序
+![NomadBank 概览页，使用完全虚构的演示数据](docs/assets/dashboard.png)
 
-## 使用 Docker 快速开始
+## 为什么使用 NomadBank
 
-从源码构建并启动：
+- 为个人部署设计，每个实例只有一个所有者
+- 管理账户标签、分组、保活策略和任务批次
+- 自动生成平衡的转入/转出计划，并手动记录完成状态
+- Go 单文件程序内嵌 React 前端和时区数据
+- SQLite 本地存储，不需要外部数据库、Redis 或消息队列
+- 提供固定版本的 Docker 镜像和跨平台发布包
+
+## Docker Compose 快速开始
+
+需要安装 [Git](https://git-scm.com/downloads) 和 [Docker Desktop](https://docs.docker.com/desktop/)，或安装 Git、Docker Engine 与 Compose 插件。
 
 ```bash
 git clone https://github.com/CoxxA/nomadbank.git
 cd nomadbank
-docker compose up -d --build
+cp .env.example .env
+docker compose pull
+docker compose up -d
 ```
 
-打开 <http://localhost:8080>，创建所有者账户即可开始使用。数据保存在 Docker 卷 `nomadbank_data` 中。
+Windows PowerShell 请把第三行改为：
 
-使用正式发布版本时，把下面的版本变量改为 GitHub Releases 中实际存在的版本号；如果还没有可用的 v2 Release，请继续使用上面的源码构建方式：
-
-```bash
-VERSION=2.0.0 # 必须是已经发布的版本
-docker run -d \
-  --name nomadbank \
-  -p 8080:8080 \
-  -v nomadbank_data:/data \
-  --restart unless-stopped \
-  ghcr.io/coxxa/nomadbank:${VERSION}
+```powershell
+Copy-Item .env.example .env
 ```
 
-生产部署、反向代理和二进制运行方式参见 [部署文档](docs/deployment.md)。
+打开 <http://localhost:8080>，创建所有者账户即可开始。`.env.example` 已固定到正式发布版本；升级前请先阅读[部署指南](docs/deployment.md)和[备份与恢复](docs/backup-restore.md)。
 
-## 核心流程
+## 使用流程
 
-1. 首次启动时创建唯一所有者。
-2. 添加至少两个银行账户。
-3. 使用默认策略或创建自定义策略。
+1. 首次启动时创建唯一的所有者账户。
+2. 添加至少两个需要维护的银行账户标签。
+3. 使用默认策略，或配置间隔、时间、金额和每日上限。
 4. 选择策略、账户分组和周期数生成任务批次。
-5. 实际完成转账后，在任务页面标记完成。
+5. 实际完成转账后，在任务页手动标记完成。
 
-## 配置
+## 数据与安全
 
-| 环境变量 | 默认值 | 说明 |
-| --- | --- | --- |
-| `PORT` | `8080` | HTTP 监听端口 |
-| `DATA_DIR` | `./data` | 数据目录 |
-| `SESSION_DAYS` | `30` | 会话有效天数，范围 1～365 |
-| `TZ` | 系统时区 | 容器进程和日志时区；不决定任务排期 |
+数据、密码哈希和会话都保存在部署实例的 SQLite 数据目录中。请保护该目录、定期离线备份，并通过 HTTPS 暴露公网实例。不要在 NomadBank 中保存银行卡号、网银密码、短信验证码或其他银行凭据。
 
-所有者在界面中配置的 IANA 时区用于任务排期。v2 数据库文件为 `nomadbank-v2.db`。
+- [部署与配置](docs/deployment.md)
+- [备份与恢复](docs/backup-restore.md)
+- [升级说明](docs/upgrading.md)
+- [安全策略](SECURITY.md)
 
-## 本地开发
+## 开发与维护
 
-要求：
+- [本地开发](docs/development.md)
+- [架构说明](docs/architecture.md)
+- [OpenAPI 规范](docs/api/openapi.yaml)
+- [贡献指南](CONTRIBUTING.md)
+- [维护与发布](docs/releasing.md)
 
-- Go 1.26
-- Node.js 24
-- npm 10+
-- GNU Make 和 POSIX shell（仅用于仓库提供的便捷命令）
-
-```bash
-# 终端一：后端
-make run
-
-# 终端二：前端
-cd frontend
-npm install
-npm run dev
-```
-
-前端开发服务器会将 `/api` 和 `/health` 代理到 `localhost:8080`。
-
-完整验证：
-
-```bash
-make verify
-```
-
-更多信息参见 [开发指南](docs/development.md) 和 [架构说明](docs/architecture.md)。
-
-## 数据与升级
-
-- 数据、会话和密码哈希都保存在 SQLite 数据库中。
-- 备份时应保护整个数据目录，具体步骤见 [备份与恢复](docs/backup-restore.md)。
-- v2 是破坏式重写，不读取旧版 `nomadbank.db`。详情见 [升级说明](docs/upgrading.md)。
-
-## API
-
-公开契约位于 [OpenAPI 规范](docs/api/openapi.yaml)。错误响应统一为：
-
-```json
-{
-  "code": "error_code",
-  "message": "面向用户的错误说明"
-}
-```
-
-## 参与贡献
-
-提交代码前请阅读 [贡献指南](CONTRIBUTING.md)。安全问题请按照 [安全策略](SECURITY.md) 私下报告。
-
-仓库维护者应通过 PR 合并改动，并使用 GitHub Actions 发布正式版本；完整步骤见[维护与发布指南](docs/releasing.md)。
+遇到问题时请先阅读[支持指南](SUPPORT.md)。Bug 和功能建议使用 GitHub Issues；安全漏洞请通过 [GitHub Security Advisories](https://github.com/CoxxA/nomadbank/security/advisories/new) 私下报告。
 
 ## License
 

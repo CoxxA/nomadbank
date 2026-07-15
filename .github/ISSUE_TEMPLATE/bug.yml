@@ -20,6 +20,14 @@ body:
       options: [Docker Compose, Docker Run, 发布二进制, 源码运行]
     validations:
       required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 系统与客户端环境
+      description: 请填写操作系统、CPU 架构，以及访问网页时使用的浏览器和版本。
+      placeholder: 例如 Ubuntu 24.04 / amd64 / Chrome 126
+    validations:
+      required: true
   - type: textarea
     id: steps
     attributes:
@@ -31,6 +39,13 @@ body:
     id: expected
     attributes:
       label: 预期行为
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为
+      description: 请说明实际发生了什么，以及是否每次都能复现。
     validations:
       required: true
   - type: textarea
