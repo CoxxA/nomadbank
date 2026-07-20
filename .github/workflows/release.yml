@@ -215,14 +215,14 @@ jobs:
         run: sha256sum nomadbank_* > SHA256SUMS
 
       - name: Attest binary provenance
-        uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4
         with:
           subject-path: |
             dist/*.tar.gz
             dist/*.zip
 
       - name: Attest binary SBOM
-        uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4
         with:
           subject-path: |
             dist/*.tar.gz
@@ -330,7 +330,7 @@ jobs:
           sbom: true
 
       - name: Attest container provenance
-        uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4
         with:
           subject-name: ${{ needs.prepare.outputs.image }}
           subject-digest: ${{ steps.push.outputs.digest }}
@@ -343,7 +343,7 @@ jobs:
           path: dist
 
       - name: Attest container application SBOM
-        uses: actions/attest@a1948c3f048ba23858d222213b7c278aabede763 # v4
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4
         with:
           subject-name: ${{ needs.prepare.outputs.image }}
           subject-digest: ${{ steps.push.outputs.digest }}
